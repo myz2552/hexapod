@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Logs and experiment outputs
+logs/
+runs/
+data/raw/
+data/processed/
+
+# Local config
+.env
+*.local
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
