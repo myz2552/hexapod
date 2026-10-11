@@ -1,65 +1,48 @@
 # TouchSight Hexapod
 
-TouchSight Hexapod, iki mekatronik mühendisliği öğrencisinin geliştirdiği, 3B yazıcıyla üretilecek ve Raspberry Pi ile çalışacak düşük maliyetli kameralı bir altı bacaklı robot projesidir.
+TouchSight Hexapod, iki mekatronik mühendisliği öğrencisinin geliştirdiği, 3B yazıcıyla üretilecek ve Raspberry Pi ile kontrol edilecek düşük maliyetli bir altı bacaklı robot projesidir. Proje iki ana aşamada geliştirilecektir.
 
-Projenin ana hedefi, kameraya sahip bir hexapod robot platformu oluşturmak ve bu robotun kararlı biçimde yürüyebilmesini sağlamaktır. Görüntü işleme, engel algılama, YOLO ile sınıflandırma ve fiziksel itme deneyi gibi özellikler ikinci aşama geliştirme hedefleri olarak ele alınacaktır.
+## Aşama 1: Mekanik Platform ve Yürüyüş
 
-## Öncelikler
+İlk aşamanın hedefi mekanik ve elektronik altyapısı tamamlanmış, ayakta durabilen ve yürüyebilen bir robot oluşturmaktır.
 
-1. Üretilebilir bir altı bacaklı mekanik platform tasarlamak.
-2. Servo motorları güvenilir biçimde sürebilen elektronik altyapıyı kurmak.
-3. Raspberry Pi tabanlı kontrol yazılımını başlatmak.
-4. Robotun temel duruş, ileri yürüme ve dönme hareketlerini gerçekleştirmesini sağlamak.
-5. Kamera görüntüsünü alıp kaydedebilen temel algı altyapısını eklemek.
-6. Daha sonraki aşamalarda engel algılama ve itilebilirlik deneylerini geliştirmek.
+- Gövde, bacak, eklem ve servo yerleşimlerinin tasarlanması
+- Bacak boyları, motor açıları ve eklem hareket sınırlarının belirlenmesi
+- 3B üretim, montaj, güç dağıtımı ve servo kontrol altyapısı
+- Her servonun yönünün, nötr açısının ve güvenli hareket aralığının kalibrasyonu
+- Ters kinematik, temel duruş ve yürüyüş kontrolü
+- Ayakta durma, ileri yürüme, dönme ve durma testleri
 
-## İlk Sürüm Hedefi
+Bu aşama robotun tekrarlanabilir biçimde ayakta durması ve temel yürüyüş testlerini tamamlamasıyla sonuçlanacaktır.
 
-İlk çalışan sürümde robotun şu yeteneklere sahip olması beklenir:
+## Aşama 2: Kamera, YOLO ve Tek Bacakla İtme Testi
 
-- 3B yazıcıyla üretilmiş gövde ve bacak yapısı
-- Raspberry Pi üzerinden çalışan temel kontrol yazılımı
-- Servo kalibrasyonu
-- Kararlı ayakta durma
-- Düz zeminde ileri yürüme
-- Basit sağ / sol dönüş
-- Kamera görüntüsü alma ve kayıt
+Yürüyüş doğrulandıktan sonra kamera ve görüntü işleme eklenecektir. Robot YOLO ile nesneyi tespit edip görsel bir itilebilirlik ön tahmini oluşturacak, ardından tek bacağıyla kısa ve kontrollü bir itme testi yapacaktır. Diğer bacaklar destek duruşunu koruyacaktır.
 
-## İleri Aşama Fikri
+Görsel bilgi ve fiziksel test verileri birleştirilerek karar verilecektir:
 
-Platform yürüyebilir hale geldikten sonra TouchSight yaklaşımı devreye alınacaktır. Bu aşamada robot, önündeki engelin itilebilir olup olmadığını önce kamerayla ve YOLO tabanlı algıyla tahmin eder. Tahmin belirsizse küçük ve kontrollü bir itme denemesi yaparak servo hattı akımı ve ivmeölçer verisini değerlendirir. Sonrasında engeli itmeye ya da etrafından dolaşmaya karar verir.
+- İtilebilir nesnede test bacağı yürüyüş konumuna alınacak; robot gövdesiyle nesneyi iterek yoluna devam edecektir.
+- İtilemez nesnede robot nesnenin etrafından dolaşacaktır.
+- Güvenli test veya hareket mümkün değilse robot duracak veya geri çekilecektir.
 
-Bu özellik ana platform tamamlandıktan sonra geliştirilecek deneysel bir katmandır.
+Bacakla test nesnenin direncini değerlendirmek, gövdeyle itme ise yolu açmak içindir. Test yalnızca görsel tahmin belirsiz olduğunda değil, güvenle değerlendirilebilen nesneler için standart akışta yapılacaktır. Fiziksel değerlendirmede servo akımı ve IMU verilerinin kullanılması planlanmaktadır; ölçüm düzeni ve karar eşikleri deneylerle belirlenecektir.
 
-## Donanım Bileşenleri
-
-- Raspberry Pi tabanlı kontrol bilgisayarı
-- Kamera modülü
-- Servo motorlarla çalışan altı bacaklı mekanizma
-- Servo sürücü kartı
-- 3B yazıcıyla üretilecek gövde ve bacak parçaları
-- İleri aşamalar için IMU ve akım ölçüm devresi
-
-## Yazılım Bileşenleri
-
-- Servo kalibrasyon ve hareket kontrolü
-- Yürüyüş paterni üretimi
-- Kamera görüntüsü alma
-- Robot durum kaydı
-- İleri aşamalar için görüntü işleme, YOLO algılama ve karar mantığı
+```text
+Kamera -> YOLO ile nesne tespiti -> Görsel ön tahmin
+       -> Tek bacakla kontrollü itme testi
+       -> Görsel ve fiziksel verilerin birleştirilmesi
+       -> Gövdeyle iterek ilerle / Etrafından dolaş
+```
 
 ## Repo Yapısı
 
-```text
-docs/
-  architecture.md      Sistem mimarisi ve geliştirme katmanları
-  project-brief.md     Proje tanımı, kapsam ve başarı ölçütleri
-  roadmap.md           Aşamalı geliştirme planı
-  decisions.md         Teknik karar kayıtları
-```
+- [Proje tanımı](docs/project-brief.md): kapsam ve başarı ölçütleri
+- [Sistem mimarisi](docs/architecture.md): modüller ve davranış akışı
+- [Yol haritası](docs/roadmap.md): iki aşamalı geliştirme planı
+- [Teknik kararlar](docs/decisions.md): karar geçmişi
 
-Kod, CAD dosyaları, deney kayıtları ve model dosyaları geliştirme ilerledikçe bu yapıya eklenecektir.
+Kod, CAD dosyaları, deney kayıtları ve model dosyaları geliştirme ilerledikçe eklenecektir.
 
 ## Durum
 
-Proje başlangıç aşamasındadır. İlk odak, yürüyebilen kameralı hexapod platformunun mekanik, elektronik ve temel yazılım altyapısını oluşturmaktır.
+Proje başlangıç aşamasındadır. Belgeler hedeflenen tasarımı anlatır; yürüyüş, YOLO ve itme davranışlarının uygulanmış veya doğrulanmış olduğunu ifade etmez.

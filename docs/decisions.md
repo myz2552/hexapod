@@ -33,3 +33,16 @@ Karar:
 
 Sonuç:
 Proje daha uygulanabilir bir sırayla ilerler. Önce mekanik, güç, servo kontrolü ve yürüyüş problemleri çözülür. Gelişmiş algı ve karar özellikleri, kararlı bir platform üzerinde daha sonra test edilir.
+
+## 2026-10-11: İki aşamalı geliştirme ve tek bacakla itme testi
+
+Durum: Kabul edildi
+
+Bağlam:
+Güncel tasarımda mekanik platform ve yürüyüş ilk aşamada, kamera ve fiziksel testle engel yönetimi ikinci aşamada tamamlanacaktır. Önceki akış testi yalnızca belirsizlikte tanımlıyor; test bacağı ve gövdeyle itme ayrımını belirtmiyordu.
+
+Karar:
+İlk aşama mekanik tasarım, motor açıları, servo kalibrasyonu, ayakta durma ve yürüyüş testlerini kapsar. İkinci aşama kamera ve YOLO, tek bacakla kontrollü itme testi, görsel ve fiziksel verilerin birleştirilmesi ve hareket kararını kapsar. Güvenle değerlendirilebilen nesnelerde test standart adımdır. İtilebilir nesne gövdeyle itilerek ilerlenir; itilemez nesnenin etrafından dolaşılır.
+
+Sonuç:
+İlk platform odağı korunur; kamera çalışmaları ikinci aşamaya alınır. Yalnızca belirsizlikte test yaklaşımı değiştirilmiştir. Destek duruşu ve bacak testi ile gövdeyle itme başarısının ilişkisi doğrulanacaktır. Bu kayıt güncel yaklaşımı belirler; önceki kayıt karar geçmişi olarak korunur.

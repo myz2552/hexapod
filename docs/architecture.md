@@ -1,132 +1,68 @@
 # Sistem Mimarisi
 
-## Genel Bakış
-
-TouchSight Hexapod mimarisi önce yürüyebilen kameralı robot platformunu oluşturacak şekilde katmanlandırılır. Gelişmiş algı ve karar özellikleri, temel hareket platformu kararlı hale geldikten sonra eklenecek ayrı bir katman olarak düşünülür.
-
-Ana katmanlar:
-
-- Mekanik platform
-- Güç ve servo elektronik altyapısı
-- Hareket kontrolü
-- Kamera altyapısı
-- İleri aşama algı ve karar modülleri
-
-## Öncelikli Sistem Akışı
+## Aşama 1: Platform ve Yürüyüş
 
 ```text
-Servo komutları
-  -> Servo sürücü
-  -> Bacak hareketleri
-  -> Duruş / yürüme / dönüş
-
-Kamera
-  -> Görüntü alma
-  -> Kayıt veya canlı izleme
+Mekanik geometri ve eklem sınırları
+  -> Servo yönleri ve nötr açı kalibrasyonu
+  -> Ters kinematik ve ayak yörüngeleri
+  -> Servo sürücüleri
+  -> Ayakta durma / Yürüme / Dönme / Durma
 ```
 
-İlk sürümde hedef, bu iki hattın güvenilir çalışmasıdır: robot yürürken kamera sisteminin de temel görüntü akışını sağlayabilmesi.
+Bu aşama mekanik tasarım, üretim, güç sistemi ve hareket kontrolünü kapsar.
 
-## İleri Aşama Sistem Akışı
+## Aşama 2: Algı, Bacak Testi ve Karar
 
 ```text
-Kamera
-  -> YOLO algılama
-  -> Engel sınıfı, konumu, güven skoru
-  -> İtilebilirlik ön tahmini
-
-Belirsizlik varsa
-  -> Kontrollü kısa itme hareketi
-  -> Servo hattı akımı
-  -> İvmeölçer verisi
-  -> İt / dolaş / dur kararı
+Kamera -> YOLO -> Nesne sınıfı ve görüntüde konumu
+  -> Görsel itilebilirlik ön tahmini
+  -> Yaklaşma ve destek duruşu
+  -> Tek bacakla kısa itme testi
+  -> Akım ve IMU verilerinin kaydı
+  -> Görsel ve fiziksel verilerin birleştirilmesi
+  -> Test bacağının yürüyüş konumuna alınması
+  -> İtilebilir: gövdeyle iterek ilerleme
+     İtilemez: etrafından dolaşma
+     Güvenli hareket mümkün değil: durma / geri çekilme
 ```
 
-Bu akış, platform yürüyebilir hale geldikten sonra eklenecek deneysel karar katmanıdır.
+Test yalnızca belirsizlikte değil, güvenle değerlendirilebilen nesneler için standart akışta yapılır. Bacakla yoklama ve gövdeyle itme ayrı davranışlardır.
 
-## Ana Modüller
+## Modüller
 
-### Mechanical Platform
+### Mekanik Platform
 
-Robotun 3B yazıcıyla üretilecek gövde, bacak ve bağlantı parçalarını kapsar.
+Gövde, bacak, eklem ve servo yerleşimlerini kapsar. İlk aşamada geometri, motor açı sınırları ve montaj toleransları belirlenir. İkinci aşamada test bacağının erişimi, kamera görüşü ve gövde temas yüzeyi değerlendirilir.
 
-Sorumluluklar:
+### Güç ve Servo Elektroniği
 
-- Servo yerleşimi
-- Bacak geometrisi
-- Gövde rijitliği
-- Kamera montaj noktası
-- Elektronik yerleşim alanları
+Güç dağıtımı, servo sürücüleri ve Raspberry Pi bağlantılarını yönetir. İkinci aşamada akım ölçümü eklenir. Test bacağının yükünü destek bacaklarından ayırt etme yöntemi deneylerle seçilir.
 
-### Power and Servo Electronics
+### Hareket Kontrolü
 
-Servo motorların güvenilir çalışması için güç dağıtımı ve sürücü altyapısını kapsar.
+Servo kalibrasyonu, duruş, ters kinematik ve yürüyüşü yönetir. İkinci aşamada destek duruşu, test bacağı hareketi, geri alma, gövdeyle itme ve dolaşma eklenir. Yoklama sırasında normal yürüyüş durdurulur; diğer bacaklar destek sağlar.
 
-Sorumluluklar:
+### Kamera ve YOLO
 
-- Servo güç hattı
-- Servo sürücü kartı
-- Raspberry Pi bağlantıları
-- Kablo düzeni
-- Güvenli açma / kapama yaklaşımı
+Görüntü alır, nesne sınıfı, görüntüde konum ve algılama güvenini üretir. Algılama güven skoru doğrudan itilebilirlik olarak kullanılmaz; görsel ön tahmin ayrıca oluşturulur.
 
-### Locomotion
+### Tek Bacakla İtme Testi
 
-Hexapod yürüyüşünü ve gövde hareketlerini yönetir.
+Tek bacakla kontrollü temas ve kısa itme uygular. Test açıları, süre, hareket sınırları ve durdurma eşikleri deneylerle belirlenir. Akım ve IMU verileri kaydedilir; test sonrası bacak yürüyüş konumuna alınır.
 
-Sorumluluklar:
+### Veri Birleştirme ve Karar
 
-- Servo kalibrasyonu
-- Temel duruş
-- İleri yürüyüş
-- Sağ / sol dönüş
-- Güvenli duruş ve durdurma
+Aynı nesnenin görsel ön tahmini ve fiziksel test bulgularını birlikte değerlendirir. Birleştirme yöntemi ve eşikler kalibrasyonla seçilecektir. Çıktı gövdeyle itme, dolaşma veya güvenli durma kararıdır. Bacak testi ile gövdeyle itme başarısı arasındaki ilişki doğrulanacaktır.
 
-### Camera
+### Deney Kaydı
 
-Robot üzerindeki kameradan görüntü alınmasını sağlar.
-
-Sorumluluklar:
-
-- Kamera başlatma
-- Görüntü alma
-- Görüntü kaydetme
-- İleri aşama algı modüllerine görüntü sağlama
-
-### Vision and Decision
-
-İkinci aşamada eklenecek algı ve karar katmanıdır.
-
-Sorumluluklar:
-
-- YOLO ile nesne algılama
-- Engel konumu ve sınıfı tahmini
-- İtilebilirlik ön tahmini
-- Gerekirse fiziksel yoklama kararı
-
-### Touch Probe
-
-İleri aşamada belirsiz engeller için kontrollü temas deneyi yapar.
-
-Sorumluluklar:
-
-- Kısa itme hareketi
-- Akım ve ivme verisi toplama
-- Basit eşiklerle itilebilirlik yorumu
-- Güvenli geri çekilme
-
-## İlk Teknik Varsayımlar
-
-- Ana bilgisayar Raspberry Pi olacaktır.
-- Servo kontrolü ayrı bir servo sürücü kartı veya mikrodenetleyici üzerinden yapılabilir.
-- İlk hedef, gerçek zamanlı karmaşık algı değil kararlı hareket kontrolüdür.
-- Kamera ilk aşamada görüntü alma ve kayıt amacıyla kullanılacaktır.
-- IMU ve akım ölçümü ileri aşama özellikleri için eklenecektir.
+Servo açıları, hareket komutları, görsel tahmin, fiziksel test, karar ve gerçek hareket sonucu ortak deneme kimliğiyle kaydedilir.
 
 ## Tasarım İlkeleri
 
-- Önce yürüyen platform, sonra gelişmiş algı.
-- Mekanik ve güç altyapısı yazılım özelliklerinden önce doğrulanmalıdır.
-- Servo kalibrasyonu tekrar edilebilir olmalıdır.
-- Kamera entegrasyonu platformu ağırlaştırmayacak ve dengeyi bozmayacak şekilde yapılmalıdır.
-- İleri aşama deneyleri, temel yürüyüş başarısını riske atmadan eklenmelidir.
+- İkinci aşamadan önce ayakta durma ve yürüyüş doğrulanmalıdır.
+- Servo açıları ve hareket sınırları belgelenmelidir.
+- Görsel tahmin, test sonucu ve hareket başarısı ayrı kaydedilmelidir.
+- Bacak testi sırasında destek duruşu korunmalıdır.
+- Gövdeyle itme başarısızsa robot durmalı; uygun alan varsa dolaşma değerlendirilmelidir.

@@ -1,53 +1,52 @@
 # Proje Tanımı
 
-## Kısa Tanım
+## Amaç
 
-TouchSight Hexapod, 3B yazıcıyla üretilecek, Raspberry Pi ile kontrol edilecek ve kamera taşıyacak düşük maliyetli bir altı bacaklı robot projesidir. Projenin birinci önceliği yürüyebilen, dengeli ve geliştirilebilir bir hexapod platformu oluşturmaktır.
+Önce ayakta durabilen ve yürüyebilen bir hexapod oluşturmak; ardından görüntü ve tek bacakla fiziksel test verilerini birleştirerek engeli gövdeyle itme veya etrafından dolaşma kararı vermektir.
 
-Engel algılama, YOLO tabanlı sınıflandırma, itilebilirlik tahmini, servo akımı ve ivmeölçer verisiyle fiziksel doğrulama gibi özellikler platform çalışır hale geldikten sonra ele alınacak ikinci aşama hedefleridir.
+## Aşama 1: Mekanik Tasarım ve Yürüyüş
 
-## Ana Problem
+Kapsam:
 
-Hexapod robotlar mekanik, elektronik ve yazılım açısından birden fazla zorluğu aynı anda içerir. Robotun ileri özellikler geliştirebilmesi için önce güvenilir bir temel platforma ihtiyacı vardır:
+- Gövde, bacak ve bağlantı parçalarının tasarımı ve 3B üretimi
+- Bacak geometrisi, eklem konumları, servo yerleşimleri ve motor açı sınırları
+- Mekanik montaj, güç dağıtımı ve servo kontrolü
+- Her eklemin nötr açısı, dönüş yönü ve güvenli açı aralığının kalibrasyonu
+- Ters kinematik, ayak yörüngeleri ve yürüyüş düzenleri
+- Ayakta durma, ileri yürüyüş, dönüş ve durma deneyleri
 
-- Gövde ve bacakların üretilebilir olması
-- Servoların doğru konumlandırılması
-- Güç dağıtımının kararlı olması
-- Bacak hareketlerinin kalibre edilebilmesi
-- Robotun düz zeminde dengeli yürüyebilmesi
-- Kameranın robot üzerine yerleştirilip görüntü verebilmesi
+Başarı ölçütleri:
 
-Bu temel kurulmadan gelişmiş algı ve karar özellikleri sağlıklı biçimde test edilemez.
+- Robot monte edilmiş, servo açı ayarları belgelenmiş olmalıdır.
+- Robot temel duruşunu koruyabilmelidir.
+- Yürüme, dönüş ve durma hareketleri tekrarlanabilir olmalıdır.
+- Mesafe, süre, sapma, güç durumu ve mekanik sorunlar kaydedilmelidir.
 
-## Yaklaşım
+Kamera, YOLO ve nesneye itme testi ikinci aşamada ele alınacaktır.
 
-Proje kademeli olarak geliştirilecektir.
+## Aşama 2: Görsel ve Fiziksel Algıyla Engel Yönetimi
 
-İlk aşamada mekanik platform, servo kontrolü ve temel yürüyüş davranışları kurulacaktır. Robotun ayakta durması, ileri yürümesi ve basit dönüş hareketleri önceliklidir.
+Kapsam:
 
-İkinci aşamada kamera entegrasyonu yapılacak, Raspberry Pi üzerinde görüntü alma ve kayıt altyapısı kurulacaktır.
+- Kamera yerleşimi, görüntü alma ve kayıt
+- YOLO ile nesne sınıfı ve görüntüde konumunun tespiti
+- Görsel itilebilirlik ön tahmini
+- Nesneye yaklaşma ve destek duruşu oluşturma
+- Tek bacakla kısa itme testi, ölçüm ve bacağı geri alma
+- Görsel bilgi ile fiziksel test verilerinin birleştirilmesi
+- İtilebilir nesneyi gövdeyle iterek ilerleme veya itilemez nesnenin etrafından dolaşma
 
-Üçüncü aşamada algı ve karar özellikleri eklenecektir. Bu aşamada YOLO ile engel algılama, belirsiz nesneler için kontrollü itme deneyi, servo hattı akımı ve ivmeölçer verisiyle doğrulama gibi çalışmalar yapılabilir.
+Güvenle değerlendirilebilen her nesne için bacak testi standart adımdır. Güvenli temas kurulamazsa test zorlanmaz; robot durur veya geri çekilir. YOLO algılama güveni, nesnenin itilebilirlik olasılığından ayrı ele alınacaktır.
 
-## İlk Sürüm Kapsamı
+Servo akımı ve IMU verilerinin kullanılması planlanmaktadır. Test bacağı ölçümlerinin destek bacaklarının yükünden nasıl ayrıştırılacağı deneylerle değerlendirilecektir. Kalibrasyon, bacakla ölçülen direncin gövdeyle itme başarısını ne kadar iyi öngördüğünü sınayacaktır.
 
-- 3B yazıcıyla üretilebilir hexapod gövde ve bacak tasarımı
-- Servo yerleşimi ve bağlantı planı
-- Raspberry Pi üzerinde çalışan temel kontrol yazılımı
-- Servo kalibrasyon aracı
-- Temel duruş ve yürüyüş paternleri
-- İleri yürüme ve basit yön değiştirme
-- Kamera modülünden görüntü alma
-- Basit test ve hata ayıklama kayıtları
+Başarı ölçütleri:
 
-## İkinci Aşama Kapsamı
-
-- YOLO tabanlı nesne algılama
-- Engel sınıfı ve konum tahmini
-- Kontrollü itme deneyi
-- Servo hattı akım ölçümü
-- İvmeölçer / IMU verisiyle hareket yorumu
-- Engel itme veya etrafından dolaşma karar mantığı
+- Kamera ve YOLO ile nesne tespiti çalışmalıdır.
+- Robot destek duruşunda tek bacakla test yapıp bacağını yürüyüş konumuna alabilmelidir.
+- Görsel ve fiziksel veriler aynı denemeyle ilişkilendirilmelidir.
+- Birleşik karara göre gövdeyle itme ve dolaşma davranışları gösterilmelidir.
+- Karar doğruluğu, gövdeyle itme başarısı, geçiş süresi ve başarısızlıklar raporlanmalıdır.
 
 ## Kapsam Dışı
 
@@ -55,30 +54,12 @@ Proje kademeli olarak geliştirilecektir.
 - Endüstriyel güvenlik sertifikasyonu
 - Çok robotlu koordinasyon
 - Yüksek hız veya yüksek yük taşıma hedefleri
-- İlk sürümde tam otonom engel yönetimi
-
-## Başarı Ölçütleri
-
-İlk sürüm için:
-
-- Robot parçaları 3B yazıcıyla üretilebilir olmalıdır.
-- Servo bağlantıları kalibre edilebilir olmalıdır.
-- Robot düz zeminde kararlı biçimde ayakta durabilmelidir.
-- Robot düz zeminde temel yürüyüş hareketini gerçekleştirebilmelidir.
-- Robot sağa ve sola basit dönüş yapabilmelidir.
-- Kamera görüntüsü Raspberry Pi üzerinden alınabilmeli ve kaydedilebilmelidir.
-
-İleri aşamalar için:
-
-- Kamera ile temel engeller algılanabilmelidir.
-- Belirsiz durumlarda kontrollü itme denemesi yapılabilmelidir.
-- Akım ve ivme verisi karar mantığında kullanılabilmelidir.
 
 ## Ana Riskler
 
-- Mekanik tasarımın servo yüklerini taşıyamaması
-- Servo güç hattında gerilim düşümü veya gürültü oluşması
-- Bacak geometrisinin yürüyüşü zorlaştırması
-- Servo kalibrasyonunun tutarsız olması
-- Raspberry Pi üzerinde kamera ve kontrol görevlerinin kaynak sınırlarına takılması
-- İleri aşamada sensör verilerinin gürültülü olması
+- Mekanik esneme ve servo kalibrasyon hataları
+- Güç hattında gerilim düşümü ve aşırı yük
+- Bacak testi sırasında destek duruşunun bozulması
+- Destek servolarının akımının test ölçümünü etkilemesi
+- Bacak testinin gövdeyle itme başarısını yeterince açıklayamaması
+- Algı hataları, ölçüm gürültüsü ve dolaşma alanının yetersizliği

@@ -1,107 +1,70 @@
 # Yol Haritası
 
-## Faz 0: Tanım ve Planlama
+Proje iki ana aşamada yürütülecektir. Aşağıdaki adımlar bu aşamaların alt çalışmalarıdır.
 
-- Proje hedeflerini yazılı hale getir.
-- İlk sürüm kapsamını yürüyebilen kameralı hexapod olarak netleştir.
-- Donanım bileşen listesini çıkar.
-- Temel repo belgelerini oluştur.
+## Aşama 1: Mekanik Platform ve Yürüyüş
 
-Çıktı:
+### Mekanik Tasarım ve Üretim
 
-- README
-- Proje tanımı
-- Mimari belge
-- Yol haritası
+- Gövde, bacak ve eklem geometrisini tasarla.
+- Servo yerleşimleri, motor açı sınırları ve bağlantıları belirle.
+- Parçaları üret, monte et ve hareket aralıklarını kontrol et.
 
-## Faz 1: Mekanik Platform
+Çıktı: CAD dosyaları, monte edilmiş platform ve geometri notları.
 
-- İlk hexapod gövde ve bacak tasarımını oluştur.
-- Servo yerleşimini belirle.
-- Kamera montaj konumunu planla.
-- Elektronik yerleşim alanlarını ayır.
-- 3B baskı ve montaj toleranslarını değerlendir.
+### Elektronik ve Servo Kalibrasyonu
 
-Çıktı:
+- Güç dağıtımı ve servo sürücü bağlantılarını kur.
+- Her servonun yönünü, nötr açısını ve güvenli açı aralığını kaydet.
+- Eklem hareketlerini ve temel duruşu test et.
 
-- CAD taslakları
-- Montaj notları
-- İlk parça listesi
+Çıktı: Bağlantı planı, kalibrasyon tablosu ve ayakta durma kayıtları.
 
-## Faz 2: Elektronik ve Güç Altyapısı
+### Yürüyüş Kontrolü ve Testleri
 
-- Raspberry Pi, servo sürücü ve güç bağlantılarını planla.
-- Servo güç hattı için uygun güç kaynağı veya pil yaklaşımını belirle.
-- Kablo düzenini ve güvenli açma / kapama düzenini tasarla.
-- Kamera bağlantısını test et.
+- Ters kinematik ve ayak yörüngelerini geliştir.
+- İleri yürüyüş, dönüş ve durmayı uygula.
+- Tekrarlı deneylerde mesafe, süre, sapma ve güç durumunu kaydet.
+- Mekanik esneme, ısınma ve kalibrasyon sorunlarını gider.
 
-Çıktı:
+Aşama geçiş ölçütü: Kararlı ayakta durma ve tekrarlanabilir yürüyüş, dönüş ve durma testlerinin tamamlanması.
 
-- Bağlantı şeması
-- Güç planı
-- Kamera bağlantı testi
+## Aşama 2: Kamera, Bacak Testi ve Engel Kararı
 
-## Faz 3: Servo Kalibrasyonu ve Temel Duruş
+### Kamera ve YOLO
 
-- Servo kalibrasyon aracını geliştir.
-- Her bacak için nötr pozisyonları belirle.
-- Robotun güvenli ayakta duruşunu oluştur.
-- Duruş sırasında servo yüklerini ve ısınmayı gözlemle.
+- Kamerayı yerleştir ve görüntü akışını çalıştır.
+- YOLO ile nesne tespitini kur ve görüntü verilerini hazırla.
+- Nesne sınıfı, konumu ve görsel itilebilirlik ön tahminini kaydet.
 
-Çıktı:
+Çıktı: Görsel algı prototipi ve tespit kayıtları.
 
-- Servo kalibrasyon notları
-- Kararlı temel duruş
+### Tek Bacakla İtme Testi
 
-## Faz 4: Temel Yürüyüş
+- Test bacağını ve diğer bacakların destek duruşunu belirle.
+- Yaklaşma, temas, kısa itme ve geri alma hareketlerini geliştir.
+- Akım ve IMU ölçüm düzenini değerlendir.
+- Test sınırlarını belirle ve referans deneylerle kalibre et.
+- Bacak testi bulgularının gövdeyle itme başarısıyla ilişkisini ölç.
 
-- İlk yürüyüş paternini oluştur.
-- İleri yürüme hareketini test et.
-- Sağ ve sol dönüş hareketlerini ekle.
-- Güvenli durdurma davranışı geliştir.
+Çıktı: Bacakla test davranışı, ölçüm kayıtları ve kalibrasyon sonuçları.
 
-Çıktı:
+### Veri Birleştirme ve Hareket Kararı
 
-- Düz zeminde temel yürüyüş
-- Basit dönüş hareketleri
-- Hareket test kayıtları
+- Görsel ve fiziksel test verilerini birleştir.
+- Güvenle test edilebilen nesnelerde bacak testini standart adım olarak uygula.
+- Test bacağını yürüyüş konumuna geri al.
+- İtilebilir nesnelerde gövdeyle iterek ilerle.
+- İtilemez nesnelerde etrafından dolaş.
+- Başarısızlıkta durma ve geri çekilme davranışlarını ekle.
 
-## Faz 5: Kamera Entegrasyonu
+Çıktı: Nesne tespiti, bacak testi, birleşik karar ve hareketten oluşan bütünleşik akış.
 
-- Raspberry Pi üzerinde kamera akışını çalıştır.
-- Görüntü alma ve kayıt komutlarını ekle.
-- Robot yürürken kamera görüntüsünün kullanılabilirliğini test et.
-- Kamera konumunun denge ve görüş açısına etkisini değerlendir.
+### Deneysel Doğrulama ve Sunum
 
-Çıktı:
+- Görsel tahmin ve birleşik değerlendirme sonuçlarını karşılaştır.
+- Karar doğruluğu, gövdeyle itme başarısı ve geçiş süresini raporla.
+- İtme ve dolaşma senaryolarını gösteren demo hazırla.
+- Tasarım, yazılım ve deney belgelerini yayıma hazırla.
 
-- Kamera görüntü kaydı
-- Görüş açısı notları
-- Kameralı yürüyüş testi
-
-## Faz 6: İleri Algı ve Deneysel Karar Hattı
-
-- YOLO modelini seç ve ilk testleri yap.
-- Engel sınıfı, konumu ve güven skorlarını kaydet.
-- İtilebilirlik için ilk görsel karar kuralını oluştur.
-- Kontrollü itme deneyi fikrini küçük testlerle doğrula.
-- Akım ve ivme ölçümünü deneysel olarak değerlendir.
-
-Çıktı:
-
-- Görsel algı prototipi
-- Deneysel itilebilirlik notları
-- İleri geliştirme kararı
-
-## Faz 7: İyileştirme ve Sunum
-
-- Mekanik dayanıklılığı iyileştir.
-- Kablo yönetimi ve elektronik yerleşimi düzenle.
-- Demo senaryosunu hazırla.
-- Proje raporu ve görsellerini tamamla.
-
-Çıktı:
-
-- Çalışır kameralı hexapod demo
-- Proje raporu
-- Sunum materyali
+Aşama tamamlanma ölçütü: Görüntü ve tek bacakla test verileriyle gövdeyle itme veya dolaşma kararının uygulanması ve sonuçların belgelenmesi.

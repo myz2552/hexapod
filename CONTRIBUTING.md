@@ -29,14 +29,14 @@ models/       İleri aşama YOLO ve algı modeli notları
 
 ## Deney Kaydı
 
-İlk aşamada her mekanik, elektronik, yürüyüş veya kamera testi için şu bilgiler kaydedilmelidir:
+İlk aşamada her mekanik, elektronik, servo kalibrasyonu veya yürüyüş testi için şu bilgiler kaydedilmelidir:
 
 - Tarih
 - Robot mekanik durumu
 - Pil veya güç durumu
 - Kullanılan servo ve güç ayarları
-- Test edilen hareket veya kamera işlevi
+- Test edilen hareket ve servo açı ayarları
 - Gözlenen sorunlar
 - Başarılı / başarısız sonucu
 
-İleri aşama algı deneylerinde ayrıca engel tipi, görsel tahmin sonucu, itme denemesi sonucu, akım ve ivme gözlemleri kaydedilebilir.
+İkinci aşamada kamera ve YOLO deneyleri ile tek bacakla itme testi kayıtları tutulmalıdır. Ortak deneme kimliği, nesne tipi, görsel ön tahmin, test bacağı, destek duruşu, akım ve IMU ölçümleri, birleşik karar ve gövdeyle itme veya dolaşma sonucu kaydedilmelidir.
