@@ -36,7 +36,9 @@ Proje daha uygulanabilir bir sırayla ilerler. Önce mekanik, güç, servo kontr
 
 ## 2026-10-11: İki aşamalı geliştirme ve tek bacakla itme testi
 
-Durum: Kabul edildi
+Durum: Değiştirildi
+
+> Bu karar 2026-10-20 tarihli "Faz 2 engel davranışı" kararıyla değiştirilmiştir. İki fazlı geliştirme yaklaşımı korunmuş; tek bacakla standart itme testi kaldırılmıştır. Kayıt karar geçmişi olarak korunur.
 
 Bağlam:
 Güncel tasarımda mekanik platform ve yürüyüş ilk aşamada, kamera ve fiziksel testle engel yönetimi ikinci aşamada tamamlanacaktır. Önceki akış testi yalnızca belirsizlikte tanımlıyor; test bacağı ve gövdeyle itme ayrımını belirtmiyordu.
@@ -46,3 +48,38 @@ Karar:
 
 Sonuç:
 İlk platform odağı korunur; kamera çalışmaları ikinci aşamaya alınır. Yalnızca belirsizlikte test yaklaşımı değiştirilmiştir. Destek duruşu ve bacak testi ile gövdeyle itme başarısının ilişkisi doğrulanacaktır. Bu kayıt güncel yaklaşımı belirler; önceki kayıt karar geçmişi olarak korunur.
+
+## 2026-10-20: Servo kontrol mimarisi
+
+Durum: Kabul edildi
+
+Bağlam:
+Servo kontrolü için ana bilgisayar ve PWM üretim yöntemi kesinleştirilmeliydi. ESP32 ve Servo2040 gibi ara denetleyiciler değerlendirilmişti.
+
+Karar:
+Raspberry Pi 5 ana bilgisayar olacaktır. PCA9685, I2C üzerinden servo PWM kontrolü için kullanılacaktır.
+
+- Tek bacak: 1 PCA9685 + 3 MG996R (CH0 Coxa, CH1 Femur, CH2 Tibia)
+- Tam robot: 2 PCA9685 + 18 MG996R
+
+ESP32 ve Servo2040 ilk sürümde kullanılmayacaktır. Servolar Raspberry Pi üzerinden beslenmeyecek; ayrı 6 V yüksek akım hattından beslenecek ve GND referansı Raspberry Pi 5 ile ortak olacaktır. İlk tek bacak testlerinde laboratuvar güç kaynağı kullanılacaktır.
+
+Sonuç:
+Tek bir yazılım platformu (Raspberry Pi 5) üzerinde IK, gait, YOLO ve karar birlikte geliştirilir. Ara denetleyici firmware'i gerekmez. Servo güç sistemi, batarya ve final güç dönüştürücü ayrıca belirlenecektir (TBD).
+
+## 2026-10-20: Faz 2 engel davranışı
+
+Durum: Kabul edildi
+
+Bağlam:
+2026-10-11 kararındaki tek bacakla standart itme testi, destek duruşunun korunması ve bacak ölçümünün gövdeyle itme başarısını öngörmesi açısından riskliydi.
+
+Karar:
+Tek bacakla standart nesne yoklama kaldırılmıştır.
+
+YOLO sonucu yeterince güvenliyse robot doğrudan PUSH veya AVOID davranışı uygulayacaktır.
+
+Görsel karar belirsizse ön tampon ile kontrollü gövde teması yapılacak ve servo güç hattı akımı + IMU + ilerleme bilgisi kullanılarak karar doğrulanacaktır. Güvenli hareket mümkün değilse robot STOP/BACK uygular.
+
+Sonuç:
+Tek bacak prototipi yalnızca Faz 1 mekanik ve IK doğrulaması için kullanılır. Fiziksel ölçüm, itme işini yapacak olan gövde/ön tampon ile yapılır. Güven eşikleri ve PUSH/AVOID eşikleri deneylerden sonra belirlenecektir.

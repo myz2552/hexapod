@@ -2,54 +2,57 @@
 
 ## Amaç
 
-Önce ayakta durabilen ve yürüyebilen bir hexapod oluşturmak; ardından görüntü ve tek bacakla fiziksel test verilerini birleştirerek engeli gövdeyle itme veya etrafından dolaşma kararı vermektir.
+Önce yürüyebilen 18-DOF bir hexapod geliştirmek, ardından kamera ve YOLO kullanarak önüne çıkan nesneleri analiz edip nesneyi gövdesiyle iterek ilerleme veya etrafından dolaşma kararı veren otonom bir sistem geliştirmek.
 
-## Aşama 1: Mekanik Tasarım ve Yürüyüş
+## Faz 1: Mekanik Platform ve Yürüyüş
 
 Kapsam:
 
-- Gövde, bacak ve bağlantı parçalarının tasarımı ve 3B üretimi
-- Bacak geometrisi, eklem konumları, servo yerleşimleri ve motor açı sınırları
-- Mekanik montaj, güç dağıtımı ve servo kontrolü
-- Her eklemin nötr açısı, dönüş yönü ve güvenli açı aralığının kalibrasyonu
-- Ters kinematik, ayak yörüngeleri ve yürüyüş düzenleri
-- Ayakta durma, ileri yürüyüş, dönüş ve durma deneyleri
+- Faz 1A: Raspberry Pi 5 + PCA9685 + 3 × MG996R ile tek bacak prototipi
+- Coxa, Femur ve Tibia servolarının yön, nötr açı ve güvenli min/max açı kalibrasyonu
+- Tek bacak inverse kinematics (IK) ve XYZ ayak pozisyonlama
+- Faz 1B: 6 bacak, 18 × MG996R ve 2 × PCA9685 ile tam mekanik platform
+- Raspberry Pi 5, PCA9685, kamera, güç sistemi ve ön tampon yerleşimi
+- Faz 1C: 6 bacak IK, tripod gait, ileri yürüme, dönme ve durma
 
 Başarı ölçütleri:
 
-- Robot monte edilmiş, servo açı ayarları belgelenmiş olmalıdır.
+- Tek bacak seçilen XYZ koordinatlarına güvenli ve tekrarlanabilir şekilde ulaşabilmelidir.
+- 18 servonun kalibrasyon değerleri belgelenmiş olmalıdır.
 - Robot temel duruşunu koruyabilmelidir.
 - Yürüme, dönüş ve durma hareketleri tekrarlanabilir olmalıdır.
-- Mesafe, süre, sapma, güç durumu ve mekanik sorunlar kaydedilmelidir.
+- Hız, yanal sapma, güç durumu ve mekanik sorunlar kaydedilmelidir.
 
-Kamera, YOLO ve nesneye itme testi ikinci aşamada ele alınacaktır.
+Kamera, YOLO ve engel kararı Faz 2'de ele alınacaktır.
 
-## Aşama 2: Görsel ve Fiziksel Algıyla Engel Yönetimi
+## Faz 2: Kamera, YOLO ve Engel Kararı
 
 Kapsam:
 
 - Kamera yerleşimi, görüntü alma ve kayıt
 - YOLO ile nesne sınıfı ve görüntüde konumunun tespiti
-- Görsel itilebilirlik ön tahmini
-- Nesneye yaklaşma ve destek duruşu oluşturma
-- Tek bacakla kısa itme testi, ölçüm ve bacağı geri alma
-- Görsel bilgi ile fiziksel test verilerinin birleştirilmesi
-- İtilebilir nesneyi gövdeyle iterek ilerleme veya itilemez nesnenin etrafından dolaşma
+- Görsel itilebilirlik tahmini
+- Engel yok → FORWARD, itilebilir → PUSH, itilemez → AVOID davranışları
+- Görsel karar belirsizse ön tamponla kontrollü gövde teması
+- Kontrollü temasta servo güç hattı akımı + IMU + ilerleme bilgisiyle PUSH/AVOID kararının doğrulanması
+- Güvenli hareket mümkün değilse STOP/BACK
 
-Güvenle değerlendirilebilen her nesne için bacak testi standart adımdır. Güvenli temas kurulamazsa test zorlanmaz; robot durur veya geri çekilir. YOLO algılama güveni, nesnenin itilebilirlik olasılığından ayrı ele alınacaktır.
+Önceki standart olan "tek bacakla kısa itme testi" kaldırılmıştır. Fiziksel doğrulama yalnızca görsel karar belirsiz olduğunda yapılır ve bacakla değil, gövde/ön tamponla uygulanır. YOLO algılama güveni, nesnenin itilebilirlik olasılığından ayrı ele alınacaktır.
 
-Servo akımı ve IMU verilerinin kullanılması planlanmaktadır. Test bacağı ölçümlerinin destek bacaklarının yükünden nasıl ayrıştırılacağı deneylerle değerlendirilecektir. Kalibrasyon, bacakla ölçülen direncin gövdeyle itme başarısını ne kadar iyi öngördüğünü sınayacaktır.
+PUSH/AVOID eşikleri, akım sensörü modeli (INA226 / INA260), IMU modeli, YOLO modelinin son sürümü ve veri setinin kesin boyutu deneylerden sonra belirlenecektir.
 
 Başarı ölçütleri:
 
 - Kamera ve YOLO ile nesne tespiti çalışmalıdır.
-- Robot destek duruşunda tek bacakla test yapıp bacağını yürüyüş konumuna alabilmelidir.
+- Robot FORWARD, PUSH ve AVOID davranışlarını göstermelidir.
+- Belirsiz durumda kontrollü gövde teması ile karar doğrulanabilmelidir.
 - Görsel ve fiziksel veriler aynı denemeyle ilişkilendirilmelidir.
-- Birleşik karara göre gövdeyle itme ve dolaşma davranışları gösterilmelidir.
-- Karar doğruluğu, gövdeyle itme başarısı, geçiş süresi ve başarısızlıklar raporlanmalıdır.
+- Detection accuracy, decision accuracy, push success, avoidance success, traversal time ve false push decision raporlanmalıdır.
 
 ## Kapsam Dışı
 
+- Robot kolu
+- Engebeli arazi navigasyonu
 - Dış mekanda tam otonom navigasyon
 - Endüstriyel güvenlik sertifikasyonu
 - Çok robotlu koordinasyon
@@ -58,8 +61,8 @@ Başarı ölçütleri:
 ## Ana Riskler
 
 - Mekanik esneme ve servo kalibrasyon hataları
-- Güç hattında gerilim düşümü ve aşırı yük
-- Bacak testi sırasında destek duruşunun bozulması
-- Destek servolarının akımının test ölçümünü etkilemesi
-- Bacak testinin gövdeyle itme başarısını yeterince açıklayamaması
+- 18 MG996R servonun anlık akımı nedeniyle güç hattında gerilim düşümü ve aşırı yük
+- Ortak GND hatalarından kaynaklanan I2C/PWM sorunları
+- Gövdeyle itme sırasında duruşun veya yönün bozulması
+- Yürüyüş servolarının akımının kontrollü temas ölçümünü maskelemesi
 - Algı hataları, ölçüm gürültüsü ve dolaşma alanının yetersizliği

@@ -18,18 +18,16 @@ Ana proje belgeleri Türkçe tutulacaktır. Kod içi yorumlar ve dosya adları g
 Önerilen ilerleyen repo yapısı:
 
 ```text
-cad/          3B model ve üretim dosyaları
-docs/         Proje belgeleri
-firmware/     Mikrodenetleyici veya servo kontrol kodları
-hardware/     Bağlantı şemaları ve parça listeleri
-software/     Raspberry Pi uygulama kodları
-tests/        Test ve deney araçları
-models/       İleri aşama YOLO ve algı modeli notları
+cad/           Projeye göre değiştirilmiş CAD parçaları (upstream CAD kopyalanmaz, bkz. docs/cad-reference.md)
+config/        Örnek kalibrasyon ve yapılandırma dosyaları
+docs/          Proje belgeleri
+experiments/   Deney kayıtları (single_leg, walking, vision, pushability)
+software/      Raspberry Pi 5 yazılımı (servo_test, single_leg, kinematics, gait, vision, decision, sensors)
 ```
 
 ## Deney Kaydı
 
-İlk aşamada her mekanik, elektronik, servo kalibrasyonu veya yürüyüş testi için şu bilgiler kaydedilmelidir:
+Faz 1'de her mekanik, elektronik, servo kalibrasyonu, tek bacak IK veya yürüyüş testi için şu bilgiler kaydedilmelidir:
 
 - Tarih
 - Robot mekanik durumu
@@ -39,4 +37,10 @@ models/       İleri aşama YOLO ve algı modeli notları
 - Gözlenen sorunlar
 - Başarılı / başarısız sonucu
 
-İkinci aşamada kamera ve YOLO deneyleri ile tek bacakla itme testi kayıtları tutulmalıdır. Ortak deneme kimliği, nesne tipi, görsel ön tahmin, test bacağı, destek duruşu, akım ve IMU ölçümleri, birleşik karar ve gövdeyle itme veya dolaşma sonucu kaydedilmelidir.
+Faz 2'de kamera ve YOLO deneyleri ile PUSH/AVOID denemeleri kaydedilmelidir. Ortak deneme kimliği, nesne sınıfı, YOLO algılama güveni, görsel itilebilirlik tahmini, kontrollü gövde teması yapıldıysa servo güç hattı akımı, IMU ve ilerleme ölçümleri, karar (FORWARD / PUSH / AVOID / STOP/BACK) ve gerçek hareket sonucu kaydedilmelidir.
+
+## Terminoloji
+
+Belgelerde şu terimler kullanılmalıdır: Raspberry Pi 5, PCA9685, MG996R 180°, Coxa, Femur, Tibia, inverse kinematics / IK, tripod gait, YOLO, PUSH, AVOID, STOP/BACK. PCA9685 "servo driver" olarak anıldığında aslında bir PWM kontrol kartı olduğu ve servolara güç sağlamadığı belirtilmelidir.
+
+Kesinleşmemiş donanım ve parametreler (kamera, IMU, akım sensörü, batarya, güç dönüştürücü, YOLO model sürümü, eşikler) TBD veya "deneylerden sonra belirlenecek" olarak yazılmalıdır.

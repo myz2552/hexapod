@@ -1,68 +1,125 @@
 # Sistem Mimarisi
 
-## Aşama 1: Platform ve Yürüyüş
+## Genel Sistem
 
 ```text
-Mekanik geometri ve eklem sınırları
-  -> Servo yönleri ve nötr açı kalibrasyonu
-  -> Ters kinematik ve ayak yörüngeleri
-  -> Servo sürücüleri
-  -> Ayakta durma / Yürüme / Dönme / Durma
+                   Kamera
+                     │
+                     ▼
+             ┌────────────────┐
+             │ Raspberry Pi 5 │
+             │----------------│
+             │ YOLO           │
+             │ Decision       │
+             │ IK             │
+             │ Gait           │
+             │ Sensor Reading │
+             └───────┬────────┘
+                     │ I2C
+         ┌───────────┼───────────┐
+         ▼           ▼           ▼
+      PCA9685     Akım sensörü   IMU
+         │
+         ▼
+      MG996R
 ```
 
-Bu aşama mekanik tasarım, üretim, güç sistemi ve hareket kontrolünü kapsar.
+Raspberry Pi 5 tek ana bilgisayardır; YOLO, karar, inverse kinematics (IK), gait ve sensör okuma yazılımları üzerinde çalışır. Servo PWM sinyalleri PCA9685 PWM kontrol kartı ile üretilir. İlk sürümde ESP32 ve Servo2040 kullanılmaz.
 
-## Aşama 2: Algı, Bacak Testi ve Karar
+Kamera modeli, akım sensörü modeli (INA226 / INA260) ve IMU modeli henüz TBD'dir; bkz. [donanım](hardware.md).
+
+## Faz 1A – Tek Bacak
 
 ```text
-Kamera -> YOLO -> Nesne sınıfı ve görüntüde konumu
-  -> Görsel itilebilirlik ön tahmini
-  -> Yaklaşma ve destek duruşu
-  -> Tek bacakla kısa itme testi
-  -> Akım ve IMU verilerinin kaydı
-  -> Görsel ve fiziksel verilerin birleştirilmesi
-  -> Test bacağının yürüyüş konumuna alınması
-  -> İtilebilir: gövdeyle iterek ilerleme
-     İtilemez: etrafından dolaşma
-     Güvenli hareket mümkün değil: durma / geri çekilme
+Raspberry Pi 5
+  ↓ I2C
+PCA9685
+  ↓
+3 × MG996R (CH0 Coxa, CH1 Femur, CH2 Tibia)
+  ↓
+Servo calibration
+  ↓
+Inverse kinematics
+  ↓
+XYZ foot control
 ```
 
-Test yalnızca belirsizlikte değil, güvenle değerlendirilebilen nesneler için standart akışta yapılır. Bacakla yoklama ve gövdeyle itme ayrı davranışlardır.
+Tek bacak yalnızca Faz 1 mekanik ve IK doğrulaması için kullanılır. Bağlantılar için bkz. [wiring.md](wiring.md).
+
+## Faz 1B – Tam Hexapod
+
+```text
+18 × MG996R
+  ↓
+2 × PCA9685
+  ↓
+6-leg IK
+  ↓
+Tripod gait
+  ↓
+Walk / Turn / Stop
+```
+
+## Faz 2 – Algı ve Engel Kararı
+
+```text
+Kamera
+  ↓
+YOLO
+  ↓
+Nesne sınıfı + konumu
+  ↓
+Görsel itilebilirlik
+  ↓
+┌─────────────┬──────────────┐
+│             │              │
+PUSH        AVOID         BELİRSİZ
+│             │              │
+İt          Dolaş      Kontrollü temas
+                           ↓
+                      Akım + IMU
+                           ↓
+                      PUSH / AVOID
+```
+
+Belirsiz durumda robot ön tampon ile düşük hızlı kontrollü gövde teması yapar. Servo güç hattı akımı, IMU ve robotun ilerleme bilgisi birlikte değerlendirilerek PUSH veya AVOID kararı verilir. Güvenli hareket mümkün değilse robot STOP/BACK davranışı uygular.
+
+Önceki "tek bacakla nesneye itme testi" mimarisi kaldırılmıştır (bkz. [decisions.md](decisions.md)).
 
 ## Modüller
 
 ### Mekanik Platform
 
-Gövde, bacak, eklem ve servo yerleşimlerini kapsar. İlk aşamada geometri, motor açı sınırları ve montaj toleransları belirlenir. İkinci aşamada test bacağının erişimi, kamera görüşü ve gövde temas yüzeyi değerlendirilir.
+Mekanik başlangıç noktası [ggldnl/Hexapod-Hardware](https://github.com/ggldnl/Hexapod-Hardware) tasarımıdır. MG996R montaj geometrisi, F686ZZ rulmanlı yataklama ve M3 vida / M3 heat-set insert yaklaşımı korunur. Raspberry Pi 5 yuvası, PCA9685 montajı, kamera yuvası, güç sistemi yerleşimi ve ön itme tamponu projeye göre yeniden tasarlanır. Bkz. [cad-reference.md](cad-reference.md).
 
 ### Güç ve Servo Elektroniği
 
-Güç dağıtımı, servo sürücüleri ve Raspberry Pi bağlantılarını yönetir. İkinci aşamada akım ölçümü eklenir. Test bacağının yükünü destek bacaklarından ayırt etme yöntemi deneylerle seçilir.
+PCA9685, sıkça "servo driver" olarak anılsa da aslında I2C ile kontrol edilen 16 kanallı bir PWM kontrol kartıdır; servoların gücünü sağlamaz. Servolar ayrı 6 V yüksek akım hattından beslenir; Raspberry Pi 5, PCA9685 ve servo güç kaynağının GND'leri ortaktır. Faz 2'de servo güç hattına akım sensörü eklenir.
 
 ### Hareket Kontrolü
 
-Servo kalibrasyonu, duruş, ters kinematik ve yürüyüşü yönetir. İkinci aşamada destek duruşu, test bacağı hareketi, geri alma, gövdeyle itme ve dolaşma eklenir. Yoklama sırasında normal yürüyüş durdurulur; diğer bacaklar destek sağlar.
+Servo kalibrasyonu (yön, nötr açı, min/max), Coxa/Femur/Tibia IK, duruş ve tripod gait'i yönetir. Faz 2'de PUSH (gövdeyle itme), AVOID (dolaşma), kontrollü gövde teması ve STOP/BACK hareketleri eklenir.
 
 ### Kamera ve YOLO
 
-Görüntü alır, nesne sınıfı, görüntüde konum ve algılama güvenini üretir. Algılama güven skoru doğrudan itilebilirlik olarak kullanılmaz; görsel ön tahmin ayrıca oluşturulur.
+Görüntü alır; nesne sınıfı, görüntüde konum ve algılama güveni üretir. YOLO algılama güveni doğrudan itilebilirlik olarak kullanılmaz; görsel itilebilirlik tahmini ayrıca oluşturulur. Veri seti tek bir `obstacle` sınıfı yerine ayrı nesne sınıfları içerir. YOLO modelinin son sürümü TBD'dir.
 
-### Tek Bacakla İtme Testi
+### Fiziksel Doğrulama
 
-Tek bacakla kontrollü temas ve kısa itme uygular. Test açıları, süre, hareket sınırları ve durdurma eşikleri deneylerle belirlenir. Akım ve IMU verileri kaydedilir; test sonrası bacak yürüyüş konumuna alınır.
+Yalnızca görsel karar belirsiz olduğunda çalışır. Ön tamponla düşük hızlı temas sırasında servo güç hattı akımı, IMU ve ilerleme verilerini kaydeder ve değerlendirir. Eşikler deneylerden sonra belirlenecektir.
 
-### Veri Birleştirme ve Karar
+### Karar
 
-Aynı nesnenin görsel ön tahmini ve fiziksel test bulgularını birlikte değerlendirir. Birleştirme yöntemi ve eşikler kalibrasyonla seçilecektir. Çıktı gövdeyle itme, dolaşma veya güvenli durma kararıdır. Bacak testi ile gövdeyle itme başarısı arasındaki ilişki doğrulanacaktır.
+Görsel itilebilirlik tahmini yeterince güvenliyse doğrudan PUSH veya AVOID seçer; belirsizse fiziksel doğrulama sonucunu kullanır. Engel yoksa FORWARD devam edilir.
 
 ### Deney Kaydı
 
-Servo açıları, hareket komutları, görsel tahmin, fiziksel test, karar ve gerçek hareket sonucu ortak deneme kimliğiyle kaydedilir.
+Servo açıları, hareket komutları, görsel tahmin, fiziksel doğrulama verileri, karar ve gerçek hareket sonucu ortak deneme kimliğiyle `experiments/` altında kaydedilir.
 
 ## Tasarım İlkeleri
 
-- İkinci aşamadan önce ayakta durma ve yürüyüş doğrulanmalıdır.
-- Servo açıları ve hareket sınırları belgelenmelidir.
-- Görsel tahmin, test sonucu ve hareket başarısı ayrı kaydedilmelidir.
-- Bacak testi sırasında destek duruşu korunmalıdır.
-- Gövdeyle itme başarısızsa robot durmalı; uygun alan varsa dolaşma değerlendirilmelidir.
+- Faz 2'den önce ayakta durma ve yürüyüş doğrulanmalıdır.
+- Servo yönleri, nötr açıları ve min/max limitleri fiziksel kalibrasyonla belirlenmeli ve belgelenmelidir; değerler uydurulmamalıdır.
+- MG996R servolar Raspberry Pi'nin 5 V pininden beslenmemelidir.
+- Görsel tahmin, fiziksel doğrulama ve hareket başarısı ayrı kaydedilmelidir.
+- Gövdeyle itme başarısızsa robot durmalı; uygun alan varsa AVOID değerlendirilmelidir.
