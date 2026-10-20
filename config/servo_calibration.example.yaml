@@ -1,0 +1,29 @@
+# Tek bacak (Faz 1A) servo kalibrasyon örneği.
+# Değerler fiziksel kalibrasyon yapılana kadar null kalmalıdır; tahmini değer girmeyin.
+# Gerçek değerler için bu dosyayı kopyalayıp (ör. servo_calibration.yaml) doldurun.
+
+leg: test_leg
+
+channels:
+  coxa: 0
+  femur: 1
+  tibia: 2
+
+servos:
+  coxa:
+    neutral_deg: null
+    min_deg: null
+    max_deg: null
+    direction: null
+
+  femur:
+    neutral_deg: null
+    min_deg: null
+    max_deg: null
+    direction: null
+
+  tibia:
+    neutral_deg: null
+    min_deg: null
+    max_deg: null
+    direction: null
