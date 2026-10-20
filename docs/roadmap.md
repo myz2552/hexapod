@@ -1,70 +1,109 @@
 # Yol Haritası
 
-Proje iki ana aşamada yürütülecektir. Aşağıdaki adımlar bu aşamaların alt çalışmalarıdır.
+```text
+Faz 1A  Tek Bacak Prototipi
+  ↓
+Faz 1B  Tam Mekanik Platform
+  ↓
+Faz 1C  Yürüyüş Kontrolü
+  ↓
+Faz 2A  Kamera + YOLO
+  ↓
+Faz 2B  PUSH / AVOID
+  ↓
+Faz 2C  Belirsiz durumda fiziksel doğrulama
+  ↓
+Faz 2D  Deneysel karşılaştırma
+```
 
-## Aşama 1: Mekanik Platform ve Yürüyüş
+## Faz 1A – Tek Bacak Prototipi
 
-### Mekanik Tasarım ve Üretim
+Donanım: 1 × Raspberry Pi 5, 1 × PCA9685, 3 × MG996R 180°, 3 × F686ZZ. Servolar laboratuvar güç kaynağından beslenir. Bağlantılar: [wiring.md](wiring.md).
 
-- Gövde, bacak ve eklem geometrisini tasarla.
-- Servo yerleşimleri, motor açı sınırları ve bağlantıları belirle.
-- Parçaları üret, monte et ve hareket aralıklarını kontrol et.
+- [ggldnl/Hexapod-Hardware](https://github.com/ggldnl/Hexapod-Hardware) mekanik tasarımını referans al ([cad-reference.md](cad-reference.md)).
+- Tek bacak parçalarını üret.
+- 3 MG996R monte et.
+- F686ZZ rulmanlı servo yataklamasını test et.
+- PCA9685'i Raspberry Pi 5'e bağla.
+- Servoları CH0 (Coxa) / CH1 (Femur) / CH2 (Tibia) olarak ata.
+- Servo yönlerini belirle.
+- Nötr açıları belirle.
+- Güvenli min/max açıları belirle.
+- Değerleri `config/servo_calibration.example.yaml` formatında kaydet.
+- Tek bacak inverse kinematics (IK) geliştir.
+- XYZ hedeflerini fiziksel olarak doğrula.
 
-Çıktı: CAD dosyaları, monte edilmiş platform ve geometri notları.
+Faz 1A geçiş ölçütü: Tek bacak seçilen XYZ koordinatlarına güvenli ve tekrarlanabilir şekilde ulaşabilmelidir.
 
-### Elektronik ve Servo Kalibrasyonu
+## Faz 1B – Tam Mekanik Platform
 
-- Güç dağıtımı ve servo sürücü bağlantılarını kur.
-- Her servonun yönünü, nötr açısını ve güvenli açı aralığını kaydet.
-- Eklem hareketlerini ve temel duruşu test et.
+- 6 bacak üret.
+- 18 servo monte et.
+- İkinci PCA9685'i ekle.
+- Raspberry Pi 5 yuvasını oluştur.
+- PCA9685 montajını oluştur.
+- Kamera yuvasını oluştur (kamera modeli TBD).
+- Güç sistemi yerleşimini oluştur (batarya ve final güç dönüştürücü TBD).
+- Ön itme tamponunu tasarla.
 
-Çıktı: Bağlantı planı, kalibrasyon tablosu ve ayakta durma kayıtları.
+## Faz 1C – Yürüyüş Kontrolü
 
-### Yürüyüş Kontrolü ve Testleri
+- 18 servo calibration
+- 6-leg IK
+- Tripod gait
+- İleri yürüme
+- Dönüş
+- Durma
+- Hız ve yanal sapma ölçümü
 
-- Ters kinematik ve ayak yörüngelerini geliştir.
-- İleri yürüyüş, dönüş ve durmayı uygula.
-- Tekrarlı deneylerde mesafe, süre, sapma ve güç durumunu kaydet.
-- Mekanik esneme, ısınma ve kalibrasyon sorunlarını gider.
+Ripple gait zorunlu değildir; ek karşılaştırma olarak tutulabilir.
 
-Aşama geçiş ölçütü: Kararlı ayakta durma ve tekrarlanabilir yürüyüş, dönüş ve durma testlerinin tamamlanması.
-
-## Aşama 2: Kamera, Bacak Testi ve Engel Kararı
-
-### Kamera ve YOLO
+## Faz 2A – Kamera + YOLO
 
 - Kamerayı yerleştir ve görüntü akışını çalıştır.
-- YOLO ile nesne tespitini kur ve görüntü verilerini hazırla.
-- Nesne sınıfı, konumu ve görsel itilebilirlik ön tahminini kaydet.
+- Veri setini hazırla ve YOLO modelini eğit (model sürümü ve veri seti boyutu TBD).
 
-Çıktı: Görsel algı prototipi ve tespit kayıtları.
+Veri setinde yalnızca `obstacle` şeklinde tek sınıf kullanılmamalıdır. En azından nesne sınıfları ayrı tutulmalıdır, örneğin:
 
-### Tek Bacakla İtme Testi
+```text
+cardboard_box
+plastic_bottle
+sponge
+brick
+books
+fixed_structure
+```
 
-- Test bacağını ve diğer bacakların destek duruşunu belirle.
-- Yaklaşma, temas, kısa itme ve geri alma hareketlerini geliştir.
-- Akım ve IMU ölçüm düzenini değerlendir.
-- Test sınırlarını belirle ve referans deneylerle kalibre et.
-- Bacak testi bulgularının gövdeyle itme başarısıyla ilişkisini ölç.
+## Faz 2B – PUSH / AVOID
 
-Çıktı: Bacakla test davranışı, ölçüm kayıtları ve kalibrasyon sonuçları.
+Robot şu davranışları gerçekleştirmelidir:
 
-### Veri Birleştirme ve Hareket Kararı
+| Durum | Davranış |
+| --- | --- |
+| Engel yok | FORWARD |
+| İtilebilir | PUSH (ön gövde/tamponla iterek ilerleme) |
+| İtilemez | AVOID (etrafından dolaşma) |
+| Güvenli hareket mümkün değil | STOP/BACK |
 
-- Görsel ve fiziksel test verilerini birleştir.
-- Güvenle test edilebilen nesnelerde bacak testini standart adım olarak uygula.
-- Test bacağını yürüyüş konumuna geri al.
-- İtilebilir nesnelerde gövdeyle iterek ilerle.
-- İtilemez nesnelerde etrafından dolaş.
-- Başarısızlıkta durma ve geri çekilme davranışlarını ekle.
+## Faz 2C – Belirsiz Durumda Fiziksel Doğrulama
 
-Çıktı: Nesne tespiti, bacak testi, birleşik karar ve hareketten oluşan bütünleşik akış.
+```text
+Düşük hızlı gövde teması
+  ↓
+Servo akımı + IMU + ilerleme
+  ↓
+PUSH / AVOID
+```
 
-### Deneysel Doğrulama ve Sunum
+Akım sensörü (INA226 / INA260) ve IMU modeli ile PUSH/AVOID eşikleri deneylerden sonra belirlenecektir.
 
-- Görsel tahmin ve birleşik değerlendirme sonuçlarını karşılaştır.
-- Karar doğruluğu, gövdeyle itme başarısı ve geçiş süresini raporla.
-- İtme ve dolaşma senaryolarını gösteren demo hazırla.
-- Tasarım, yazılım ve deney belgelerini yayıma hazırla.
+## Faz 2D – Deneysel Karşılaştırma
 
-Aşama tamamlanma ölçütü: Görüntü ve tek bacakla test verileriyle gövdeyle itme veya dolaşma kararının uygulanması ve sonuçların belgelenmesi.
+Şunlar raporlanacaktır:
+
+- Detection accuracy
+- Decision accuracy
+- Push success
+- Avoidance success
+- Traversal time
+- False push decision
