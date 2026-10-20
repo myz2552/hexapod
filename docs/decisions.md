@@ -67,6 +67,23 @@ ESP32 ve Servo2040 ilk sürümde kullanılmayacaktır. Servolar Raspberry Pi üz
 Sonuç:
 Tek bir yazılım platformu (Raspberry Pi 5) üzerinde IK, gait, YOLO ve karar birlikte geliştirilir. Ara denetleyici firmware'i gerekmez. Servo güç sistemi, batarya ve final güç dönüştürücü ayrıca belirlenecektir (TBD).
 
+## 2026-10-20: Mekanik referans platform
+
+Durum: Kabul edildi
+
+Bağlam:
+Bacak ve gövde mekaniğini sıfırdan tasarlamak yerine MG996R ile çalışan, açık kaynaklı bir hexapod tasarımı başlangıç noktası olarak seçilmek istendi.
+
+Karar:
+Mekanik başlangıç noktası olarak https://github.com/ggldnl/Hexapod-Hardware kullanılacaktır.
+
+MG996R montaj geometrisi, F686ZZ rulmanlı yataklama, M3 vida ve M3 heat-set insert yaklaşımı korunacaktır.
+
+Raspberry Pi 5, PCA9685, kamera, güç sistemi ve ön tampon projeye göre yeniden tasarlanacaktır.
+
+Sonuç:
+Faz 1A'da tek bacak hızlıca üretilebilir. Upstream CAD dosyaları lisans/izin teyit edilene kadar bu repoya kopyalanmaz; yalnızca kaynak ve kullanılan parçalar belgelenir (bkz. docs/cad-reference.md).
+
 ## 2026-10-20: Faz 2 engel davranışı
 
 Durum: Kabul edildi
