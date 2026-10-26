@@ -1,0 +1,31 @@
+# TouchSight Hexapod bacak ve gövde geometrisi (mm, derece).
+#
+# Kaynak: ggldnl/Hexapod-Hardware (CERN-OHL-W-2.0) içindeki hexapod.urdf.
+# Değerler URDF eklem zincirinden ve tibia mesh'inin uç noktasından hesaplanmıştır;
+# CAD dosyası kopyalanmamıştır. Mekanik parçalar upstream ile aynı olduğu için
+# ölçüler bu robot için geçerlidir. tibia_mm mesh'ten tahmindir: montajdan sonra
+# tibia ekseni ile ayak ucu arası kumpasla ölçülüp güncellenmelidir.
+#
+# Gövde çerçevesi: x ileri, y sol, z yukarı; orijin gövde merkezinde.
+# URDF'te ön yön tanımlı değildir. Bacak yerleşimi ön/arka simetrik olduğundan
+# ön yön seçimi kinematiği değiştirmez; kamera/tampon yerleşimiyle teyit edin.
+#
+# Bacak çerçevesi: orijin coxa ekseni üzerinde, femur ekseni yüksekliğinde;
+# x ekseni coxa 0° iken bacağın dışa doğru yönü (heading_deg), z yukarı.
+# Eklem açı konvansiyonu: software/kinematics/README.md
+
+segments:
+  coxa_mm: 68.0    # coxa ekseni -> femur ekseni (radyal)
+  femur_mm: 76.7   # femur ekseni -> tibia ekseni
+  tibia_mm: 100.0  # tibia ekseni -> ayak ucu (tahmin, ölçülecek)
+
+# Femur ekseninin gövde orijinine göre yüksekliği (URDF base çerçevesi).
+mount_z_mm: 8.7
+
+legs:
+  front_left:   {x_mm: 82.2,  y_mm: 56.9,  heading_deg: 45.0}
+  middle_left:  {x_mm: 0.0,   y_mm: 70.7,  heading_deg: 90.0}
+  rear_left:    {x_mm: -82.2, y_mm: 56.9,  heading_deg: 135.0}
+  rear_right:   {x_mm: -82.2, y_mm: -56.9, heading_deg: -135.0}
+  middle_right: {x_mm: 0.0,   y_mm: -70.7, heading_deg: -90.0}
+  front_right:  {x_mm: 82.2,  y_mm: -56.9, heading_deg: -45.0}
