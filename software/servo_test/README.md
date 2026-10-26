@@ -4,7 +4,7 @@ PCA9685 üzerinden tek servo hareket testleri (CH0/CH1/CH2).
 
 Faz 1A araçları Raspberry Pi 5 + PCA9685 + üç MG996R 180° içindir.
 ESP32/Servo2040 kullanılmaz. Kod donanım üzerinde henüz doğrulanmamıştır.
-IK/XYZ hareketleri bu aşamanın kapsamında değildir.
+IK/XYZ hareketleri bu klasörün kapsamında değildir; bkz. [single_leg](../single_leg/README.md).
 
 ## Safety
 
@@ -85,39 +85,51 @@ argüman hatası 2, Ctrl+C 130 dönüş kodudur.
 
 ## Manual calibration
 
+Kalibrasyon şema v2 kullanır (bkz. [software/hardware](../hardware/README.md#kalibrasyon-şeması-v2)).
+Kart adresi ve kanal dosyadan okunur (`--leg`, varsayılan `test_leg`); çıktı dosyası yoksa
+null değerli örnekten başlanır. Eklemi önce kinematik **sıfır pozuna**, sonra bilinen bir
+**referans açıya** (`--ref-deg`, varsayılan +45) getirip işaretleyin; yön ve ölçek bu iki
+pozdan hesaplanır. Sıfır pozu ve pozitif yön tanımı:
+[kinematics README](../kinematics/README.md#eklem-açı-konvansiyonu-sıfır-pozu).
+
 `--start 90 --step 2 --lower 60 --upper 120` varsayılandır. Başlangıç komutu
 onaydan sonra gönderilir. Script sınırlar dışında hareket etmez, otomatik endpoint
-aramaz. Daha geniş `--lower/--upper` ancak fiziksel gözlemle doğrulandığında seçilmelidir.
+aramaz. Daha geniş `--lower/--upper` ancak fiziksel gözlemle doğrulandığında seçilmelidir;
+gerçek min/max limitlerini işaretlemek için genellikle gerekecektir.
+
+```bash
+python calibrate_servo.py femur --ref-deg 45 --lower 30 --upper 150
+```
 
 | Komut | Görev |
 | --- | --- |
 | `+`, `-` | Bir step artır/azalt |
 | `g 95` | Belirtilen PWM komut açısına git |
-| `l`, `n`, `u` | Mevcut açıyı min, neutral, max olarak işaretle |
-| `d 1`, `d -1` | Fiziksel olarak gözlenen yönü kaydet |
-| `p` | Bu oturumdaki işaretleri göster |
+| `z` | Mevcut komutu kinematik sıfır pozu olarak işaretle |
+| `r` | Mevcut komutu referans pozu (`--ref-deg`) olarak işaretle |
+| `l`, `u` | Mevcut komutu güvenli alt/üst limit olarak işaretle |
+| `p` | İşaretleri ve türetilen yön/ölçeği göster |
 | `s` | Doğrula ve YAML kaydet |
 | `h` | Yardım |
 | `q` | Çık ve PWM bırak |
 
-İşaretler her oturumda boş başlar. Dört alan tamamlanmadan ve
-`min_deg <= neutral_deg <= max_deg` sağlanmadan kayıt yapılmaz. Varsayılan çıktı,
+İşaretler her oturumda boş başlar. Dört işaret tamamlanmadan, sıfır ve referans pozu
+`l..u` içinde değilken veya iki poz 5 komut derecesinden yakınken kayıt yapılmaz. Varsayılan çıktı,
 çalışma klasöründen bağımsız `config/servo_calibration.yaml` dosyasıdır;
 `--output` ile değiştirilebilir. Diğer eklemlerin verileri korunur. YAML yeniden
-yazılırken yorumlar/biçim korunmaz; veri yapısı korunur. Aynı dosyaya eşzamanlı
-kalibrasyon yazmayın. `s` kullanılmadan çıkıldığında işaretler kaydedilmez.
+yazılırken yorumlar/biçim korunmaz; veri yapısı korunur (kart adresleri ondalık yazılır: 0x40 = 64).
+Aynı dosyaya eşzamanlı kalibrasyon yazmayın. `s` kullanılmadan çıkıldığında işaretler kaydedilmez.
 Gerçek calibration dosyası gitignore içindedir; null değerli örnek git'te kalır.
+Eski (v1: `servos`/`channels`) dosyalar reddedilir; yeniden kalibre edin.
 
 Python scriptindeki `angle`, **servo PWM komut açısıdır**; doğrudan gerçek robot
 joint angle anlamına gelmez. Adafruit Servo helper eşlemesi 750..2250 µs ve
 180° actuation range kullanır. Bunlar kesin MG996R fiziksel limitleri değildir;
-üretici/model varyantına göre sonradan fiziksel olarak kalibre edilmelidir.
+sıfır/referans pozu ölçümü bu farkı kalibrasyonda düzeltir.
 [Servo helper API](https://docs.circuitpython.org/projects/motor/en/latest/api.html)
 bu pulse eşlemesini açıklar.
 
-IK öncesi fiziksel olarak ölçülecekler: mechanical zero, servo horn orientation,
-direction, safe minimum, safe maximum ve neutral position. Bu araçlar henüz
-bu ölçümlerin yapıldığı veya herhangi bir mekanik aralığın güvenli olduğu iddiasını taşımaz.
+Kalibrasyon sonrası XYZ denemesi: [software/single_leg](../single_leg/README.md).
 Deneyleri [katkı rehberindeki](../../CONTRIBUTING.md) bilgilerle kaydedin.
 
 ## Wiring checklist
@@ -138,9 +150,9 @@ Ayrıntılar: [wiring](../../docs/wiring.md), [hardware](../../docs/hardware.md)
 ## Development validation
 
 ```bash
-python -m compileall software/servo_test
-python -m unittest discover -s software/servo_test/tests -v
+python -m compileall software
+python -m unittest discover -s software -t . -v
 ```
 
-Repo kökünden çalıştırılır. Testler sahte I2C/PWM nesneleri ve geçici YAML
+Repo kökünden çalıştırılır; tüm yazılım testlerini kapsar (CI aynı komutu çalıştırır). Testler sahte I2C/PWM nesneleri ve geçici YAML
 dosyaları kullanır; gerçek donanımı doğrulamaz.

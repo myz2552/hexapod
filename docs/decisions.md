@@ -100,3 +100,19 @@ Görsel karar belirsizse ön tampon ile kontrollü gövde teması yapılacak ve 
 
 Sonuç:
 Tek bacak prototipi yalnızca Faz 1 mekanik ve IK doğrulaması için kullanılır. Fiziksel ölçüm, itme işini yapacak olan gövde/ön tampon ile yapılır. Güven eşikleri ve PUSH/AVOID eşikleri deneylerden sonra belirlenecektir.
+
+## 2026-10-26: Kalibrasyon şeması v2, eklem konvansiyonu ve yazılım katmanları
+
+Durum: Önerildi
+
+Bağlam:
+v1 kalibrasyon şeması (`neutral_deg`, `min_deg`, `max_deg`, `direction`) servo komut açısını gerçek eklem açısına çevirmeye yetmiyordu: "nötr" anlamsal olarak tanımsızdı, yönün neye göre olduğu belirtilmemişti ve 750..2250 µs eşlemesinin MG996R'nin gerçek açısına oturmaması (ölçek) hesaba katılmıyordu. Şema ayrıca tek kart ve sabit CH0..CH2 varsayıyordu; tam robotta 2 × PCA9685 kullanılacaktır.
+
+Karar:
+- Eklem açı konvansiyonu ve kinematik sıfır pozu tanımlandı (coxa montaj yönünde, femur yatay, tibia ayak ucu tibia ekseninin altında; bkz. `software/kinematics/README.md`).
+- Kalibrasyon şeması v2: her eklem için kart adresi, kanal, sıfır pozu komutu, bilinen bir referans açıdaki komut ve güvenli min/max komut saklanır. Yön ve ölçek iki pozdan türetilir; ayrı alan olarak tutulmaz.
+- Bacak ölçüleri (coxa 68.0 mm, femur 76.7 mm, tibia ≈100 mm) upstream URDF'ten hesaplanıp `config/robot_geometry.yaml` dosyasına kaynağıyla yazıldı; tibia montajdan sonra ölçülecektir.
+- Yazılım katmanlara ayrıldı: kinematik yalnızca eklem açısı üretir; `software/hardware` kalibrasyon, hız sınırlı hareket ve çoklu PCA9685 çıkışını yönetir.
+
+Sonuç:
+Faz 1A'da IK ve XYZ testi kalibrasyon tamamlanır tamamlanmaz yapılabilir. Sürücü değişikliği (ör. Servo2040) veya simülasyon yalnızca çıkış katmanını etkiler. v1 formatındaki yerel kalibrasyon dosyaları geçersizdir; eklemler yeniden kalibre edilmelidir. Konvansiyon ekipçe onaylanınca durum "Kabul edildi" yapılmalıdır.
