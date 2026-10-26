@@ -103,37 +103,55 @@ class BringupTests(unittest.TestCase):
         self.assertEqual(visited, list(range(16)))
 
     def test_yaml_preserves_other_joints_and_rejects_incomplete(self) -> None:
-        settings = controller.ServoSettings()
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "calibration.yaml"
             original = calibration.load_document(path)
-            original["servos"]["femur"]["note"] = "preserve me"
+            original["legs"]["test_leg"]["femur"]["note"] = "preserve me"
             path.write_text(yaml.safe_dump(original), encoding="utf-8")
             before = path.read_bytes()
-            invalid = [dict.fromkeys(calibration.FIELDS),
-                       dict(min_deg=100, neutral_deg=90, max_deg=110, direction=1),
-                       dict(min_deg=60, neutral_deg=90, max_deg=120, direction=0),
-                       dict(min_deg=60, neutral_deg=float("nan"), max_deg=120, direction=1)]
-            for marks in invalid:
-                with self.assertRaises(ValueError):
-                    calibration.save_calibration(path, "coxa", marks, settings)
-                self.assertEqual(path.read_bytes(), before)
             # Synthetic fixtures only; these are NOT physical calibration values.
-            marks = dict(min_deg=61, neutral_deg=89, max_deg=119, direction=-1)
-            calibration.save_calibration(path, "coxa", marks, settings)
+            good = dict(zero_cmd_deg=89, ref_cmd_deg=110, min_cmd_deg=61, max_cmd_deg=119)
+            invalid = [(dict.fromkeys(calibration.MARKS.values()), 45.0),
+                       (good, None),
+                       (dict(good, min_cmd_deg=100), 45.0),
+                       (dict(good, ref_cmd_deg=91), 45.0),
+                       (dict(good, ref_cmd_deg=130), 45.0),
+                       (dict(good, zero_cmd_deg=float("nan")), 45.0)]
+            for marks, ref_deg in invalid:
+                with self.assertRaises(ValueError):
+                    calibration.save_calibration(path, "test_leg", "coxa", marks, ref_deg)
+                self.assertEqual(path.read_bytes(), before)
+            with self.assertRaises(ValueError):
+                calibration.save_calibration(path, "front_left", "coxa", good, 45.0)
+            saved = calibration.save_calibration(path, "test_leg", "coxa", good, 45.0)
+            self.assertEqual(saved.direction, 1)
             updated = calibration.load_document(path)
             expected = copy.deepcopy(original)
-            expected["servos"]["coxa"].update(marks)
+            expected["legs"]["test_leg"]["coxa"].update(good, ref_joint_deg=45.0)
             self.assertEqual(updated, expected)
 
-    def test_interactive_bounds_and_hardware_error_cleanup(self) -> None:
+    def test_old_schema_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "calibration.yaml"
+            path.write_text(yaml.safe_dump({"leg": "test_leg", "channels": {}, "servos": {}}),
+                            encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "v1"):
+                calibration.load_document(path)
+
+    def test_interactive_bounds_marks_and_channel_from_file(self) -> None:
         rig = SimpleNamespace(set_angle=unittest.mock.Mock())
-        args = SimpleNamespace(start=90, joint="coxa", step=2)
-        with patch("builtins.input", side_effect=["g 121", "g nan", "g 59", "+", "-", "q"]):
-            with contextlib.redirect_stdout(io.StringIO()):
-                calibration.interact(rig, args, controller.ServoSettings())
+        document = calibration.load_document(Path("/nonexistent/calibration.yaml"))
+        args = SimpleNamespace(start=90, leg="test_leg", joint="femur", step=2, ref_deg=45.0,
+                               output=Path("/nonexistent/calibration.yaml"))
+        out = io.StringIO()
+        with patch("builtins.input", side_effect=["g 121", "g nan", "g 59", "+", "z", "-",
+                                                  "-", "-", "r", "p", "s", "q"]):
+            with contextlib.redirect_stdout(out):
+                calibration.interact(rig, args, controller.ServoSettings(), document)
         self.assertEqual([c.args for c in rig.set_angle.call_args_list],
-                         [(0, 90), (0, 92), (0, 90)])
+                         [(1, 90), (1, 92), (1, 90), (1, 88), (1, 86)])
+        self.assertIn("direction=-1", out.getvalue())
+        self.assertIn("Rejected: Mark min_cmd_deg, max_cmd_deg", out.getvalue())
 
     def test_check_never_sends_angle(self) -> None:
         module = importlib.import_module("software.servo_test.check_pca9685")
@@ -162,6 +180,7 @@ class BringupTests(unittest.TestCase):
             ("test_three_servos", ["--hold", "-1"]),
             ("calibrate_servo", ["coxa", "--step", "0"]),
             ("calibrate_servo", ["coxa", "--start", "121"]),
+            ("calibrate_servo", ["coxa", "--ref-deg", "0"]),
         ):
             result = subprocess.run([sys.executable, "-m", f"software.servo_test.{name}", *arguments],
                                     cwd=root, capture_output=True, text=True)

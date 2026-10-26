@@ -1,67 +1,66 @@
-"""Manually collect measured servo calibration; never search for endpoints."""
+"""Manually collect measured servo calibration (schema v2); never search for endpoints."""
 
 import argparse
 import copy
 from pathlib import Path
+import sys
 import tempfile
 from typing import Any
 
 if __package__:
-    from .cli_common import add_address, confirm, finite_float, run_cli
-    from .pca9685_controller import JOINT_CHANNELS, ServoRig, ServoSettings, validate_angle
+    from .cli_common import confirm, finite_float, run_cli
+    from .pca9685_controller import ServoRig, ServoSettings, validate_angle
 else:
-    from cli_common import add_address, confirm, finite_float, run_cli
-    from pca9685_controller import JOINT_CHANNELS, ServoRig, ServoSettings, validate_angle
+    from cli_common import confirm, finite_float, run_cli
+    from pca9685_controller import ServoRig, ServoSettings, validate_angle
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_OUTPUT = REPO_ROOT / "config" / "servo_calibration.yaml"
-FIELDS = ("min_deg", "neutral_deg", "max_deg", "direction")
+if str(REPO_ROOT) not in sys.path:  # script-style invocation
+    sys.path.insert(0, str(REPO_ROOT))
+
+from software.hardware.calibration import (  # noqa: E402
+    DEFAULT_CALIBRATION, EXAMPLE_CALIBRATION, JOINTS, MEASURED_FIELDS, JointCalibration,
+    read_document)
+
+DEFAULT_OUTPUT = DEFAULT_CALIBRATION
+MARKS = {"z": "zero_cmd_deg", "r": "ref_cmd_deg", "l": "min_cmd_deg", "u": "max_cmd_deg"}
 HELP = """+ / -: move one step; g 95: goto command angle
-l / n / u: mark current angle as minimum / neutral / maximum
-d 1 / d -1: mark direction; p: show marks; s: save; h: help; q: release and quit
+z: mark current command as kinematic ZERO pose (see software/kinematics/README.md)
+r: mark current command as REFERENCE pose (joint at --ref-deg, measured with a jig)
+l / u: mark current command as safe lower / upper limit
+p: show marks and derived direction/scale; s: save; h: help; q: release and quit
 Never seek a stop by stalling or buzzing. Cut servo power if binding occurs."""
 
 
 def load_document(path: Path) -> dict[str, Any]:
     """Read existing calibration or the null-valued example without guessing."""
-    import yaml
-
-    source = path if path.exists() else REPO_ROOT / "config" / "servo_calibration.example.yaml"
-    data = yaml.safe_load(source.read_text(encoding="utf-8"))
-    if not isinstance(data, dict) or data.get("leg") != "test_leg":
-        raise ValueError("Calibration must be a mapping with leg: test_leg")
-    if data.get("channels") != JOINT_CHANNELS:
-        raise ValueError("Calibration channels must be coxa: 0, femur: 1, tibia: 2")
-    servos = data.get("servos")
-    if not isinstance(servos, dict):
-        raise ValueError("Calibration requires a servos mapping")
-    for joint in JOINT_CHANNELS:
-        if not isinstance(servos.get(joint), dict) or not all(k in servos[joint] for k in FIELDS):
-            raise ValueError(f"Missing calibration fields for {joint}")
-    return data
+    return read_document(path if path.exists() else EXAMPLE_CALIBRATION)
 
 
-def save_calibration(path: Path, joint: str, marks: dict[str, Any],
-                     settings: ServoSettings) -> None:
+def build_joint(document: dict[str, Any], leg: str, joint: str,
+                marks: dict[str, Any], ref_deg: float | None) -> JointCalibration:
+    """Validate marks against the document's board/channel; raises ValueError."""
+    if leg not in document["legs"]:
+        raise ValueError(f"Leg {leg!r} not in calibration file")
+    if joint not in JOINTS:
+        raise ValueError("Unknown joint")
+    values = dict(marks, ref_joint_deg=ref_deg)
+    missing = [k for k in MEASURED_FIELDS if values.get(k) is None]
+    if missing:
+        raise ValueError(f"Mark {', '.join(missing)} before saving")
+    entry = document["legs"][leg][joint]
+    return JointCalibration(board=entry["board"], channel=entry["channel"],
+                            **{k: values[k] for k in MEASURED_FIELDS})
+
+
+def save_calibration(path: Path, leg: str, joint: str, marks: dict[str, Any],
+                     ref_deg: float | None) -> JointCalibration:
     """Validate and atomically replace YAML, preserving all other joint data."""
     import yaml
 
-    if joint not in JOINT_CHANNELS:
-        raise ValueError("Unknown joint")
-    for field in FIELDS:
-        if marks.get(field) is None:
-            raise ValueError(f"Mark {field} before saving")
-    for field in FIELDS[:3]:
-        value = marks[field]
-        if isinstance(value, bool) or not isinstance(value, (int, float)):
-            raise ValueError(f"{field} must be numeric")
-        validate_angle(value, settings)
-    if type(marks["direction"]) is not int or marks["direction"] not in (-1, 1):
-        raise ValueError("Direction must be +1 or -1")
-    if not marks["min_deg"] <= marks["neutral_deg"] <= marks["max_deg"]:
-        raise ValueError("Require min_deg <= neutral_deg <= max_deg")
     data = copy.deepcopy(load_document(path))
-    data["servos"][joint].update({field: marks[field] for field in FIELDS})
+    calibration = build_joint(data, leg, joint, marks, ref_deg)
+    data["legs"][leg][joint].update({k: getattr(calibration, k) for k in MEASURED_FIELDS})
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary: Path | None = None
     try:
@@ -73,18 +72,29 @@ def save_calibration(path: Path, joint: str, marks: dict[str, Any],
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
+    return calibration
 
 
-def interact(rig: ServoRig, args: argparse.Namespace, settings: ServoSettings) -> None:
+def describe(marks: dict[str, Any], ref_deg: float) -> str:
+    text = ", ".join(f"{k}={v}" for k, v in marks.items())
+    zero, ref = marks.get("zero_cmd_deg"), marks.get("ref_cmd_deg")
+    if zero is not None and ref is not None and ref != zero:
+        scale = (ref - zero) / ref_deg
+        text += f"; direction={'+1' if scale > 0 else '-1'}, scale={scale:.3f} cmd/joint deg"
+    return text
+
+
+def interact(rig: Any, args: argparse.Namespace, settings: ServoSettings,
+             document: dict[str, Any]) -> None:
     """Collect marks from this session; only explicit s writes a file."""
-    marks: dict[str, Any] = dict.fromkeys(FIELDS)
+    marks: dict[str, Any] = dict.fromkeys(MARKS.values())
     angle = args.start
-    channel = JOINT_CHANNELS[args.joint]
+    channel = document["legs"][args.leg][args.joint]["channel"]
     rig.set_angle(channel, angle)
     print(HELP)
     while True:
         try:
-            tokens = input(f"{args.joint} {angle:g} deg > ").split()
+            tokens = input(f"{args.leg}.{args.joint} {angle:g} cmd > ").split()
         except EOFError:
             return
         if not tokens:
@@ -103,15 +113,15 @@ def interact(rig: ServoRig, args: argparse.Namespace, settings: ServoSettings) -
                 validate_angle(target, settings)
                 rig.set_angle(channel, target)
                 angle = target
-            elif command in ("l", "n", "u") and len(tokens) == 1:
-                marks[{"l": "min_deg", "n": "neutral_deg", "u": "max_deg"}[command]] = angle
-            elif command == "d" and len(tokens) == 2 and tokens[1] in ("1", "+1", "-1"):
-                marks["direction"] = int(tokens[1])
+            elif command in MARKS and len(tokens) == 1:
+                marks[MARKS[command]] = angle
             elif command == "p" and len(tokens) == 1:
-                print(marks)
+                print(describe(marks, args.ref_deg))
             elif command == "s" and len(tokens) == 1:
-                save_calibration(args.output, args.joint, marks, settings)
-                print(f"Saved {args.joint} to {args.output}")
+                saved = save_calibration(args.output, args.leg, args.joint, marks, args.ref_deg)
+                low, high = saved.joint_limits_deg
+                print(f"Saved {args.leg}.{args.joint} to {args.output}; direction "
+                      f"{saved.direction:+d}, joint range {low:.1f}..{high:.1f} deg")
             elif command == "h" and len(tokens) == 1:
                 print(HELP)
             else:
@@ -122,29 +132,37 @@ def interact(rig: ServoRig, args: argparse.Namespace, settings: ServoSettings) -
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("joint", choices=JOINT_CHANNELS)
+    parser.add_argument("joint", choices=JOINTS)
+    parser.add_argument("--leg", default="test_leg")
+    parser.add_argument("--ref-deg", type=finite_float, default=45.0,
+                        help="Measured joint angle of the reference pose (default +45)")
     parser.add_argument("--start", type=finite_float, default=90.0)
     parser.add_argument("--step", type=finite_float, default=2.0)
     parser.add_argument("--lower", type=finite_float, default=60.0)
     parser.add_argument("--upper", type=finite_float, default=120.0)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    add_address(parser)
     args = parser.parse_args()
     try:
         settings = ServoSettings(min_deg=args.lower, max_deg=args.upper)
         if args.lower >= args.upper or args.step <= 0 or args.step > args.upper - args.lower:
             raise ValueError("Require lower < upper and 0 < step <= upper - lower")
+        if args.ref_deg == 0 or abs(args.ref_deg) > 180:
+            raise ValueError("--ref-deg must be non-zero and within +/-180")
         validate_angle(args.start, settings)
     except ValueError as exc:
         parser.error(str(exc))
-    if args.output.resolve() == (REPO_ROOT / "config" / "servo_calibration.example.yaml").resolve():
+    if args.output.resolve() == EXAMPLE_CALIBRATION.resolve():
         parser.error("Do not overwrite the null-valued calibration example")
-    load_document(args.output)  # Validate existing data before any motion.
-    print(f"{args.joint}: CH{JOINT_CHANNELS[args.joint]}, start {args.start:g} deg; "
-          f"command bounds {args.lower:g}..{args.upper:g}; step {args.step:g}")
+    document = load_document(args.output)  # Validate existing data before any motion.
+    if args.leg not in document["legs"]:
+        parser.error(f"Leg {args.leg!r} not in {args.output}")
+    entry = document["legs"][args.leg][args.joint]
+    print(f"{args.leg}.{args.joint}: board 0x{entry['board']:02x} CH{entry['channel']}, "
+          f"start {args.start:g}; command bounds {args.lower:g}..{args.upper:g}; "
+          f"step {args.step:g}; reference pose {args.ref_deg:+g} joint deg")
     confirm()
-    with ServoRig(address=args.address, settings=settings) as rig:
-        interact(rig, args, settings)
+    with ServoRig(address=entry["board"], settings=settings) as rig:
+        interact(rig, args, settings, document)
     return 0
 
 

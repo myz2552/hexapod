@@ -1,29 +1,46 @@
-# Tek bacak (Faz 1A) servo kalibrasyon örneği.
-# Değerler fiziksel kalibrasyon yapılana kadar null kalmalıdır; tahmini değer girmeyin.
-# Gerçek değerler için bu dosyayı kopyalayıp (ör. servo_calibration.yaml) doldurun.
+# Servo kalibrasyon şeması v2 (Faz 1A tek bacak örneği).
+# Ölçülen değerler fiziksel kalibrasyon yapılana kadar null kalmalıdır; tahmini değer girmeyin.
+# Gerçek değerler için bu dosyayı servo_calibration.yaml olarak kopyalayıp
+# software/servo_test/calibrate_servo.py ile doldurun (gerçek dosya gitignore içindedir).
+#
+# Tüm *_cmd_deg alanları servo PWM KOMUT açısıdır (750..2250 µs eşlemesi), gerçek eklem açısı değildir.
+#   board          PCA9685 I2C adresi (0x40 gibi; kaydedildikten sonra YAML ondalık yazar: 0x40 = 64)
+#   channel        PCA9685 kanalı (0..15)
+#   zero_cmd_deg   eklemin kinematik sıfır pozundaki komut (bkz. software/kinematics/README.md)
+#   ref_cmd_deg    eklem bilinen bir açıdayken (ref_joint_deg) okunan komut
+#   ref_joint_deg  referans pozun ölçülen eklem açısı, ör. açı şablonuyla +45
+#   min_cmd_deg    zorlanma/vızıltı olmadan ulaşılan güvenli alt komut
+#   max_cmd_deg    zorlanma/vızıltı olmadan ulaşılan güvenli üst komut
+# Yön ve ölçek iki pozdan otomatik türetilir.
+#
+# Tam robotta (Faz 1B) legs altında front_left, middle_left, rear_left, rear_right,
+# middle_right, front_right girdileri olacaktır; kart/kanal ataması docs/wiring.md'de belirlenecektir.
 
-leg: test_leg
+schema_version: 2
 
-channels:
-  coxa: 0
-  femur: 1
-  tibia: 2
-
-servos:
-  coxa:
-    neutral_deg: null
-    min_deg: null
-    max_deg: null
-    direction: null
-
-  femur:
-    neutral_deg: null
-    min_deg: null
-    max_deg: null
-    direction: null
-
-  tibia:
-    neutral_deg: null
-    min_deg: null
-    max_deg: null
-    direction: null
+legs:
+  test_leg:
+    coxa:
+      board: 0x40
+      channel: 0
+      zero_cmd_deg: null
+      ref_cmd_deg: null
+      ref_joint_deg: null
+      min_cmd_deg: null
+      max_cmd_deg: null
+    femur:
+      board: 0x40
+      channel: 1
+      zero_cmd_deg: null
+      ref_cmd_deg: null
+      ref_joint_deg: null
+      min_cmd_deg: null
+      max_cmd_deg: null
+    tibia:
+      board: 0x40
+      channel: 2
+      zero_cmd_deg: null
+      ref_cmd_deg: null
+      ref_joint_deg: null
+      min_cmd_deg: null
+      max_cmd_deg: null
