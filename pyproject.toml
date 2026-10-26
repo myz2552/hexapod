@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "touchsight-hexapod"
+version = "0.1.0"
+description = "TouchSight Hexapod Raspberry Pi 5 software"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["PyYAML"]
+
+[project.optional-dependencies]
+# Raspberry Pi 5 + PCA9685 hardware access; not needed for tests or dry runs.
+hardware = [
+    "adafruit-blinka",
+    "adafruit-circuitpython-pca9685",
+    "adafruit-circuitpython-motor",
+]
+
+[tool.setuptools.packages.find]
+include = ["software*"]
