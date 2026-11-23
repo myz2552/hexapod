@@ -51,7 +51,9 @@ Sonuç:
 
 ## 2026-10-20: Servo kontrol mimarisi
 
-Durum: Kabul edildi
+Durum: Değiştirildi
+
+> Bu karar 2026-11-23 tarihli "Servo 2040 ve batarya güç sistemi" kararıyla değiştirilmiştir. Raspberry Pi 5'in ana bilgisayar olması ve servoların ayrı 6 V hattan beslenmesi korunmuştur; PCA9685 yerine Servo 2040 kullanılır. Kayıt karar geçmişi olarak korunur.
 
 Bağlam:
 Servo kontrolü için ana bilgisayar ve PWM üretim yöntemi kesinleştirilmeliydi. ESP32 ve Servo2040 gibi ara denetleyiciler değerlendirilmişti.
@@ -116,3 +118,26 @@ Karar:
 
 Sonuç:
 Faz 1A'da IK ve XYZ testi kalibrasyon tamamlanır tamamlanmaz yapılabilir. Sürücü değişikliği (ör. Servo2040) veya simülasyon yalnızca çıkış katmanını etkiler. v1 formatındaki yerel kalibrasyon dosyaları geçersizdir; eklemler yeniden kalibre edilmelidir. Konvansiyon ekipçe onaylanınca durum "Kabul edildi" yapılmalıdır.
+
+## 2026-11-23: Servo 2040 ve batarya güç sistemi
+
+Durum: Kabul edildi
+
+Bağlam:
+Tam robot için planlanan 2 × PCA9685, ayrı voltaj düşürücüler ve güç dağıtımı hem gövdede fazla yer kaplıyordu hem de kablolaması karmaşıktı. Batarya ve final güç dönüştürücü de henüz belirlenmemişti (TBD). 2026-10-26 kararında yazılımın çıkış katmanı, sürücü değişikliği yalnızca bu katmanı etkileyecek şekilde ayrılmıştı.
+
+Karar:
+- Servo PWM kontrolü için 2 × PCA9685 yerine tek bir Pimoroni Servo 2040 kullanılır. Kart 18 servo çıkışına, servo güç hattında akım/voltaj ölçümüne, 6 analog sensör girişine ve Qw/ST konnektörüne sahiptir.
+- Raspberry Pi 5 ana bilgisayar olarak kalır; Servo 2040'a USB ile bağlanır. USB hem seri haberleşmeyi hem kartın lojik beslemesini sağlar. PWM zamanlaması RP2040'ta üretilir.
+- Güç: 2S LiPo → 25 A sigorta → anahtar → XT60 Y-ayırıcı → aynı modelden iki UBEC (10 A sürekli / 20 A tepe, 2S–6S giriş). UBEC #1 6,0 V'ta servoları (Servo 2040 klemensi), UBEC #2 5,0 V'ta Raspberry Pi 5'i (USB-C güç kablosu) besler.
+- 6 V servo hattı nedeniyle Servo 2040'ın "Separate USB and Ext. Power" izi kesilir.
+- Kanal ataması ve bağlantılar [wiring.md](wiring.md) dosyasındadır.
+- ESP32 kullanılmaz.
+
+Sonuç:
+- Elektronik tek kart + iki UBEC'e iner; I2C kablolaması ve kart adresleri ortadan kalkar.
+- Servo 2040 klemensleri sürekli 10 A için tasarlanmıştır; yürüyüş akımı bunu aşarsa servo gücü ikinci bir 6 V UBEC ile bölünecektir. Akım ilk testlerde ölçülmelidir.
+- Servo 2040 için MicroPython firmware'i (seri komut protokolü) ve Raspberry Pi tarafında yeni bir çıkış sürücüsü yazılmalıdır. `software/servo_test` araçları ve kalibrasyon şemasındaki `board` alanı (PCA9685 I2C adresi) bu geçişte güncellenecektir. Bu iş tamamlanana kadar mevcut PCA9685 kodu referans olarak korunur.
+- PCA9685 osilatör farkı nedeniyle alınmış kalibrasyonlar Servo 2040'a taşınmaz; eklemler yeniden kalibre edilmelidir.
+- Kart üstü akım ölçümü Faz 2C'deki servo güç hattı akımı ihtiyacını karşılayabilir; yeterliliği deneyle belirlenecektir.
+- Batarya kapasitesi yürüyüş akımı ölçüldükten sonra kesinleşecektir.

@@ -12,10 +12,9 @@ Korunacak yaklaşımlar:
 
 Projeye göre yeniden tasarlanacak parçalar:
 
-- Raspberry Pi 5 yuvası
-- PCA9685 montajı
+- Raspberry Pi 5 + Servo 2040 montaj plakası (base orta boşluğu yaklaşık 65 × 120 mm)
 - Kamera yuvası (kamera modeli TBD)
-- Güç sistemi yerleşimi (batarya ve final güç dönüştürücü TBD)
+- Güç sistemi yerleşimi (2S LiPo, 2 × UBEC, sigorta, anahtar; bkz. wiring.md)
 - Ön itme tamponu (Faz 2 PUSH ve kontrollü gövde teması için)
 
 ## Tek Bacak İçin Referans Parçalar

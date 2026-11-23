@@ -1,6 +1,9 @@
 # software
 
-Raspberry Pi 5 üzerinde çalışan yazılım. Servo PWM sinyalleri I2C üzerinden PCA9685 ile üretilir.
+Raspberry Pi 5 üzerinde çalışan yazılım. Hedef donanımda servo PWM sinyalleri, Pi'ye USB ile bağlı Servo 2040 tarafından üretilir.
+
+> **Geçiş notu (2026-11-23):** Donanım PCA9685'ten Servo 2040'a geçmiştir (bkz. [docs/decisions.md](../docs/decisions.md)). Bu klasördeki kod henüz PCA9685 içindir ve Servo 2040 çıkış sürücüsü eklenene kadar referans olarak korunur.
+> Mevcut `servo_test` ve `hardware/pca9685_bank.py` PCA9685 içindir; Servo 2040 firmware'i ve çıkış sürücüsü Faz 1A'da eklenecektir (bkz. [docs/roadmap.md](../docs/roadmap.md)).
 
 ```text
 software/

@@ -2,8 +2,10 @@
 
 PCA9685 üzerinden tek servo hareket testleri (CH0/CH1/CH2).
 
+> **Geçiş notu (2026-11-23):** Donanım PCA9685'ten Servo 2040'a geçmiştir (bkz. [docs/decisions.md](../../docs/decisions.md)). Bu klasördeki kod henüz PCA9685 içindir ve Servo 2040 çıkış sürücüsü eklenene kadar referans olarak korunur.
+
 Faz 1A araçları Raspberry Pi 5 + PCA9685 + üç MG996R 180° içindir.
-ESP32/Servo2040 kullanılmaz. Kod donanım üzerinde henüz doğrulanmamıştır.
+ESP32 kullanılmaz. Kod donanım üzerinde henüz doğrulanmamıştır.
 IK/XYZ hareketleri bu klasörün kapsamında değildir; bkz. [single_leg](../single_leg/README.md).
 
 ## Safety

@@ -2,7 +2,7 @@
 
 TouchSight Hexapod, Raspberry Pi 5 ile kontrol edilen, 3B baskılı, 18 serbestlik dereceli (18-DOF) bir hexapod robot projesidir. Proje iki mekatronik mühendisliği öğrencisi tarafından geliştirilmektedir.
 
-Robotun 6 bacağı vardır. Her bacakta 3 adet MG996R 180° positional servo bulunur: Coxa, Femur ve Tibia. Servolar, Raspberry Pi 5'e I2C ile bağlı PCA9685 PWM kontrol kartı üzerinden sürülür. İlk sürümde ESP32 ve Servo2040 kullanılmayacaktır.
+Robotun 6 bacağı vardır. Her bacakta 3 adet MG996R 180° positional servo bulunur: Coxa, Femur ve Tibia. Servolar, Raspberry Pi 5'e USB ile bağlı Pimoroni Servo 2040 kontrol kartı üzerinden sürülür. ESP32 kullanılmayacaktır.
 
 Proje iki ana fazdan oluşacaktır.
 
@@ -15,8 +15,8 @@ Proje iki ana fazdan oluşacaktır.
     ↓
 Coxa / Femur / Tibia
     ↓
-PCA9685
-    ↓
+Servo 2040
+    ↓ USB
 Raspberry Pi 5
 ```
 
@@ -30,7 +30,7 @@ Bu aşamada:
 
 doğrulanacaktır.
 
-Ardından sistem 6 bacak ve 18 servoya genişletilecektir (Raspberry Pi 5 → 2 × PCA9685 → 18 × MG996R).
+Ardından sistem 6 bacak ve 18 servoya genişletilecektir (Raspberry Pi 5 → Servo 2040 → 18 × MG996R).
 
 Tam robotta:
 
@@ -73,7 +73,7 @@ PUSH/AVOID eşikleri, akım ve IMU ölçüm düzeni deneylerden sonra belirlenec
 
 ## Güç
 
-Servolar Raspberry Pi üzerinden beslenmez. Servo sistemi ayrı 6 V yüksek akım hattından beslenir; Raspberry Pi 5 ve servo güç sisteminin GND referansı ortaktır. İlk tek bacak testlerinde laboratuvar güç kaynağı kullanılacaktır. Ayrıntılar için [bağlantı belgesine](docs/wiring.md) bakın.
+Robot 2S LiPo ile çalışır. Aynı modelden iki UBEC gücü ikiye ayırır: 6,0 V hat Servo 2040 üzerinden servoları, 5,0 V hat Raspberry Pi 5'i besler. Servolar Raspberry Pi üzerinden beslenmez; GND referansı ortaktır. İlk tek bacak testlerinde servo hattı için laboratuvar güç kaynağı kullanılacaktır. Ayrıntılar için [bağlantı belgesine](docs/wiring.md) bakın.
 
 ## Repo Yapısı
 
@@ -81,7 +81,7 @@ Servolar Raspberry Pi üzerinden beslenmez. Servo sistemi ayrı 6 V yüksek akı
 - [Sistem mimarisi](docs/architecture.md): modüller ve davranış akışı
 - [Yol haritası](docs/roadmap.md): Faz 1A–2D geliştirme planı
 - [Donanım](docs/hardware.md): kesinleşmiş ve TBD donanım listesi
-- [Bağlantılar](docs/wiring.md): tek bacak prototipi bağlantı şeması
+- [Bağlantılar](docs/wiring.md): tek bacak ve tam robot bağlantıları, güç zinciri, kanal ataması
 - [CAD referansı](docs/cad-reference.md): mekanik referans platform ve lisans notları
 - [Teknik kararlar](docs/decisions.md): karar geçmişi
 

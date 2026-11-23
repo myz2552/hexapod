@@ -8,11 +8,11 @@
 
 Kapsam:
 
-- Faz 1A: Raspberry Pi 5 + PCA9685 + 3 × MG996R ile tek bacak prototipi
+- Faz 1A: Raspberry Pi 5 + Servo 2040 + 3 × MG996R ile tek bacak prototipi
 - Coxa, Femur ve Tibia servolarının yön, nötr açı ve güvenli min/max açı kalibrasyonu
 - Tek bacak inverse kinematics (IK) ve XYZ ayak pozisyonlama
-- Faz 1B: 6 bacak, 18 × MG996R ve 2 × PCA9685 ile tam mekanik platform
-- Raspberry Pi 5, PCA9685, kamera, güç sistemi ve ön tampon yerleşimi
+- Faz 1B: 6 bacak, 18 × MG996R ve 1 × Servo 2040 ile tam mekanik platform
+- Raspberry Pi 5, Servo 2040, kamera, güç sistemi (2S LiPo + 2 × UBEC) ve ön tampon yerleşimi
 - Faz 1C: 6 bacak IK, tripod gait, ileri yürüme, dönme ve durma
 
 Başarı ölçütleri:
@@ -39,7 +39,7 @@ Kapsam:
 
 Önceki standart olan "tek bacakla kısa itme testi" kaldırılmıştır. Fiziksel doğrulama yalnızca görsel karar belirsiz olduğunda yapılır ve bacakla değil, gövde/ön tamponla uygulanır. YOLO algılama güveni, nesnenin itilebilirlik olasılığından ayrı ele alınacaktır.
 
-PUSH/AVOID eşikleri, akım sensörü modeli (INA226 / INA260), IMU modeli, YOLO modelinin son sürümü ve veri setinin kesin boyutu deneylerden sonra belirlenecektir.
+PUSH/AVOID eşikleri, Servo 2040 akım ölçümünün yeterliliği (gerekirse INA226 / INA260), IMU modeli, YOLO modelinin son sürümü ve veri setinin kesin boyutu deneylerden sonra belirlenecektir.
 
 Başarı ölçütleri:
 
@@ -62,7 +62,8 @@ Başarı ölçütleri:
 
 - Mekanik esneme ve servo kalibrasyon hataları
 - 18 MG996R servonun anlık akımı nedeniyle güç hattında gerilim düşümü ve aşırı yük
-- Ortak GND hatalarından kaynaklanan I2C/PWM sorunları
+- Servo 2040 klemenslerinin 10 A sürekli akım sınırının yürüyüşte aşılması
+- Ortak GND hatalarından kaynaklanan PWM/USB sorunları
 - Gövdeyle itme sırasında duruşun veya yönün bozulması
 - Yürüyüş servolarının akımının kontrollü temas ölçümünü maskelemesi
 - Algı hataları, ölçüm gürültüsü ve dolaşma alanının yetersizliği

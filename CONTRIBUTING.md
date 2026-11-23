@@ -41,6 +41,6 @@ Faz 2'de kamera ve YOLO deneyleri ile PUSH/AVOID denemeleri kaydedilmelidir. Ort
 
 ## Terminoloji
 
-Belgelerde şu terimler kullanılmalıdır: Raspberry Pi 5, PCA9685, MG996R 180°, Coxa, Femur, Tibia, inverse kinematics / IK, tripod gait, YOLO, PUSH, AVOID, STOP/BACK. PCA9685 "servo driver" olarak anıldığında aslında bir PWM kontrol kartı olduğu ve servolara güç sağlamadığı belirtilmelidir.
+Belgelerde şu terimler kullanılmalıdır: Raspberry Pi 5, Servo 2040, UBEC, MG996R 180°, Coxa, Femur, Tibia, inverse kinematics / IK, tripod gait, YOLO, PUSH, AVOID, STOP/BACK. Servo 2040 servolara güç üretmez; servo gücü 6 V UBEC'ten klemenslere gelir ve kart yalnızca dağıtır, ölçer ve PWM üretir.
 
-Kesinleşmemiş donanım ve parametreler (kamera, IMU, akım sensörü, batarya, güç dönüştürücü, YOLO model sürümü, eşikler) TBD veya "deneylerden sonra belirlenecek" olarak yazılmalıdır.
+Kesinleşmemiş donanım ve parametreler (kamera, IMU, harici akım sensörü ihtiyacı, batarya kapasitesi, YOLO model sürümü, eşikler) TBD veya "deneylerden sonra belirlenecek" olarak yazılmalıdır.

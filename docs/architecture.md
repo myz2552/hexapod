@@ -15,27 +15,31 @@
              │ Gait           │
              │ Sensor Reading │
              └───────┬────────┘
-                     │ I2C
-         ┌───────────┼───────────┐
-         ▼           ▼           ▼
-      PCA9685     Akım sensörü   IMU
-         │
-         ▼
-      MG996R
+                     │ USB (seri + lojik 5 V)
+                     ▼
+             ┌────────────────┐
+             │  Servo 2040    │──Qw/ST──► IMU (TBD)
+             │----------------│
+             │ PWM üretimi    │◄─ ayak sensörleri (isteğe bağlı)
+             │ Akım / voltaj  │
+             └───────┬────────┘
+                     │ 18 kanal
+                     ▼
+                18 × MG996R
 ```
 
-Raspberry Pi 5 tek ana bilgisayardır; YOLO, karar, inverse kinematics (IK), gait ve sensör okuma yazılımları üzerinde çalışır. Servo PWM sinyalleri PCA9685 PWM kontrol kartı ile üretilir. İlk sürümde ESP32 ve Servo2040 kullanılmaz.
+Raspberry Pi 5 tek ana bilgisayardır; YOLO, karar, inverse kinematics (IK), gait ve sensör okuma yazılımları üzerinde çalışır. Servo PWM sinyalleri, Pi'ye USB ile bağlı Servo 2040 kartının RP2040 işlemcisinde üretilir; Pi yalnızca servo komutlarını gönderir. Servo 2040 ayrıca servo güç hattının akımını ve voltajını ölçer. ESP32 kullanılmaz.
 
-Kamera modeli, akım sensörü modeli (INA226 / INA260) ve IMU modeli henüz TBD'dir; bkz. [donanım](hardware.md).
+Kamera modeli ve IMU modeli henüz TBD'dir. Servo 2040'ın akım ölçümünün Faz 2C için yeterliliği deneyle belirlenecektir; yetmezse harici sensör (INA226 / INA260) eklenir. Bkz. [donanım](hardware.md).
 
 ## Faz 1A – Tek Bacak
 
 ```text
 Raspberry Pi 5
-  ↓ I2C
-PCA9685
+  ↓ USB
+Servo 2040
   ↓
-3 × MG996R (CH0 Coxa, CH1 Femur, CH2 Tibia)
+3 × MG996R (çıkış 1 Coxa, 2 Femur, 3 Tibia)
   ↓
 Servo calibration
   ↓
@@ -51,7 +55,7 @@ Tek bacak yalnızca Faz 1 mekanik ve IK doğrulaması için kullanılır. Bağla
 ```text
 18 × MG996R
   ↓
-2 × PCA9685
+1 × Servo 2040
   ↓
 6-leg IK
   ↓
@@ -90,11 +94,11 @@ Belirsiz durumda robot ön tampon ile düşük hızlı kontrollü gövde teması
 
 ### Mekanik Platform
 
-Mekanik başlangıç noktası [ggldnl/Hexapod-Hardware](https://github.com/ggldnl/Hexapod-Hardware) tasarımıdır. MG996R montaj geometrisi, F686ZZ rulmanlı yataklama ve M3 vida / M3 heat-set insert yaklaşımı korunur. Raspberry Pi 5 yuvası, PCA9685 montajı, kamera yuvası, güç sistemi yerleşimi ve ön itme tamponu projeye göre yeniden tasarlanır. Bkz. [cad-reference.md](cad-reference.md).
+Mekanik başlangıç noktası [ggldnl/Hexapod-Hardware](https://github.com/ggldnl/Hexapod-Hardware) tasarımıdır. MG996R montaj geometrisi, F686ZZ rulmanlı yataklama ve M3 vida / M3 heat-set insert yaklaşımı korunur. Raspberry Pi 5 + Servo 2040 montaj plakası, kamera yuvası, güç sistemi (batarya, iki UBEC) yerleşimi ve ön itme tamponu projeye göre yeniden tasarlanır. Bkz. [cad-reference.md](cad-reference.md).
 
 ### Güç ve Servo Elektroniği
 
-PCA9685, sıkça "servo driver" olarak anılsa da aslında I2C ile kontrol edilen 16 kanallı bir PWM kontrol kartıdır; servoların gücünü sağlamaz. Servolar ayrı 6 V yüksek akım hattından beslenir; Raspberry Pi 5, PCA9685 ve servo güç kaynağının GND'leri ortaktır. Faz 2'de servo güç hattına akım sensörü eklenir.
+Güç 2S LiPo'dan gelir ve aynı modelden iki UBEC ile ikiye ayrılır: 6,0 V hat Servo 2040 üzerinden 18 servoyu, 5,0 V hat Raspberry Pi 5'i besler. Servo akım darbeleri Pi'ye ulaşmaz. Servo 2040 servo güç hattının akımını ve voltajını ölçer; bu ölçüm hem aşırı akım korumasında hem de Faz 2C kontrollü temasta kullanılır. Ayrıntılar: [wiring.md](wiring.md).
 
 ### Hareket Kontrolü
 

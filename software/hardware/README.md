@@ -4,6 +4,9 @@ Kinematik eklem açısı ile servo arasındaki katman. IK ve gait yalnızca ekle
 bu katman açıları kalibrasyonla PCA9685 komutlarına çevirir. İleride sürücü değişirse
 (ör. Servo2040) veya simülasyon eklenirse yalnızca bu katman değişir.
 
+> **Geçiş notu (2026-11-23):** Donanım PCA9685'ten Servo 2040'a geçmiştir (bkz. [docs/decisions.md](../../docs/decisions.md)). Bu klasördeki kod henüz PCA9685 içindir ve Servo 2040 çıkış sürücüsü eklenene kadar referans olarak korunur.
+> Servo 2040 sürücüsü `ServoOutput` arayüzünü (`write`, `release_all`) uygulayacaktır. Kalibrasyon şemasındaki `board` alanı (PCA9685 I2C adresi) bu geçişte yeniden tanımlanacak; Servo 2040'ın çıkışları 1–18 olduğundan `channel` aralığı da güncellenecektir.
+
 ```text
 IK / gait (eklem açısı)
   ↓

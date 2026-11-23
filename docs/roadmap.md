@@ -18,14 +18,16 @@ Faz 2D  Deneysel karşılaştırma
 
 ## Faz 1A – Tek Bacak Prototipi
 
-Donanım: 1 × Raspberry Pi 5, 1 × PCA9685, 3 × MG996R 180°, 3 × F686ZZ. Servolar laboratuvar güç kaynağından beslenir. Bağlantılar: [wiring.md](wiring.md).
+Donanım: 1 × Raspberry Pi 5, 1 × Servo 2040, 3 × MG996R 180°, 3 × F686ZZ. Servolar laboratuvar güç kaynağından (6 V) beslenir. Bağlantılar: [wiring.md](wiring.md).
 
 - [ggldnl/Hexapod-Hardware](https://github.com/ggldnl/Hexapod-Hardware) mekanik tasarımını referans al ([cad-reference.md](cad-reference.md)).
 - Tek bacak parçalarını üret.
 - 3 MG996R monte et.
 - F686ZZ rulmanlı servo yataklamasını test et.
-- PCA9685'i Raspberry Pi 5'e bağla.
-- Servoları CH0 (Coxa) / CH1 (Femur) / CH2 (Tibia) olarak ata.
+- Servo 2040'ın "Separate USB and Ext. Power" izini kes ve Raspberry Pi 5'e USB ile bağla.
+- Servo 2040 için MicroPython firmware'i ve seri komut protokolünü yaz.
+- `software/hardware` altına Servo 2040 çıkış sürücüsünü ekle; `software/servo_test` araçlarını ve kalibrasyon şemasındaki `board` alanını Servo 2040'a uyarla.
+- Servoları çıkış 1 (Coxa) / 2 (Femur) / 3 (Tibia) olarak ata.
 - Servo yönlerini belirle.
 - Nötr açıları belirle.
 - Güvenli min/max açıları belirle.
@@ -39,11 +41,12 @@ Faz 1A geçiş ölçütü: Tek bacak seçilen XYZ koordinatlarına güvenli ve t
 
 - 6 bacak üret.
 - 18 servo monte et.
-- İkinci PCA9685'i ekle.
-- Raspberry Pi 5 yuvasını oluştur.
-- PCA9685 montajını oluştur.
+- Kanal atamasını [wiring.md](wiring.md) tablosuna göre yap.
+- Raspberry Pi 5 + Servo 2040 montaj plakasını oluştur.
 - Kamera yuvasını oluştur (kamera modeli TBD).
-- Güç sistemi yerleşimini oluştur (batarya ve final güç dönüştürücü TBD).
+- Güç sistemini kur: 2S LiPo, sigorta, anahtar, 2 × UBEC (6 V servo, 5 V Pi).
+- İlk ayağa kalkmada Servo 2040 akım ölçümünü kaydet; 10 A sınırına göre güç bölme gereğini değerlendir.
+- Yürüyüş akımına göre batarya kapasitesini kesinleştir.
 - Ön itme tamponunu tasarla.
 
 ## Faz 1C – Yürüyüş Kontrolü
@@ -95,7 +98,7 @@ Servo akımı + IMU + ilerleme
 PUSH / AVOID
 ```
 
-Akım sensörü (INA226 / INA260) ve IMU modeli ile PUSH/AVOID eşikleri deneylerden sonra belirlenecektir.
+Servo 2040 akım ölçümünün yeterliliği (gerekirse harici INA226 / INA260), IMU modeli ve PUSH/AVOID eşikleri deneylerden sonra belirlenecektir.
 
 ## Faz 2D – Deneysel Karşılaştırma
 
