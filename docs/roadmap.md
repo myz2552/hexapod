@@ -26,16 +26,16 @@ Donanım: Raspberry Pi 5, Servo 2040, 3 × MG996R, 3 × F686ZZ, 6 V laboratuvar 
 - Firmware'i derle ve Servo 2040'a yükle.
 - Pi'de UART'ı aç, Pi ↔ Servo 2040 UART kablolamasını yap.
 - `python -m software.bringup telemetry` ile bağlantıyı doğrula.
-- 18 servoyu bacaklara takmadan `controller/calibrate.py` ile kalibre et; `config/hexapod.yml` dosyasını commit et.
+- 18 servoyu bacaklara takmadan `controller/calibrate.py` ile kalibre et; `controller/hexapod/config/config.yml` dosyasını commit et.
 - front_right bacağını monte et (kanal 0–2), F686ZZ yataklamasını test et.
 - Bacağın hareket yönlerini ve trim değerlerini laboratuvar güç kaynağıyla kontrol et.
 
-Geçiş ölçütü: Kart telemetri veriyor, 18 servonun darbe kalibrasyonu `config/hexapod.yml` içinde kayıtlı, test bacağı doğru yönlerde hareket ediyor.
+Geçiş ölçütü: Kart telemetri veriyor, 18 servonun darbe kalibrasyonu `controller/hexapod/config/config.yml` içinde kayıtlı, test bacağı doğru yönlerde hareket ediyor.
 
 ## Faz 1B – Tam Platform ve Ayakta Durma
 
 - 6 bacağı ve 18 servoyu monte et; kanal atamasını [wiring.md](wiring.md#servo-kanal-ataması) tablosuna göre yap.
-- `battery_mount` yuvalarını Hobbywing UBEC'lere göre uyarla (`cad/modified/`).
+- `battery_mount` yuvalarını Hobbywing UBEC'lere göre uyarla (`hardware/CAD/modified/`).
 - Güç sistemini kur: 2S LiPo, 25 A sigorta, UBEC S (6,0 V), UBEC P (5,0 V).
 - Robot destek üzerindeyken ayağa kalkmayı dene, `hardware.direction` ve `hardware.trim` değerlerini düzelt.
 - Yerde ayağa kalk, en yüksek akımı ve voltaj düşümünü kaydet (`software.bringup stand --log`).

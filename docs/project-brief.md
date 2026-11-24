@@ -15,7 +15,7 @@ Kapsam:
 
 Başarı ölçütleri:
 
-- 18 servonun kalibrasyon değerleri `config/hexapod.yml` içinde belgelenmiş olmalıdır.
+- 18 servonun kalibrasyon değerleri `controller/hexapod/config/config.yml` içinde belgelenmiş olmalıdır.
 - Robot temel duruşunu koruyabilmelidir.
 - Yürüme, dönüş ve durma hareketleri tekrarlanabilir olmalıdır.
 - Tripod ve wave için hız, yanal sapma, akım/enerji ve mekanik sorunlar kaydedilmelidir.
@@ -62,7 +62,7 @@ Başarı ölçütleri:
 - Servo 2040 klemenslerinin 10 A sürekli akım sınırının yürüyüşte aşılması
 - UBEC voltaj anahtarının yanlış konumda bırakılması (Pi veya servolar zarar görür)
 - Ortak GND veya TX/RX hatalarından kaynaklanan UART sorunları
-- Upstream firmware'in bu robotta donanımda doğrulanmamış olması; yürüyüş davranışını değiştirmek C++ firmware'de fork gerektirir
+- Upstream firmware'in bu robotta donanımda doğrulanmamış olması; yürüyüş davranışını değiştirmek C++ firmware'de değişiklik gerektirir
 - Gövdeyle itme sırasında duruşun veya yönün bozulması
 - Yürüyüş servolarının akımının kontrollü temas ölçümünü maskelemesi
 - Algı hataları, ölçüm gürültüsü ve dolaşma alanının yetersizliği

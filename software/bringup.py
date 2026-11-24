@@ -1,6 +1,6 @@
 """Servo 2040 + upstream firmware için Raspberry Pi tarafı devreye alma aracı.
 
-Upstream controller istemcisini (controller/ alt modülü) kullanır; kendi
+controller/ klasöründeki istemciyi (`hexapod` paketi) kullanır; kendi
 protokolü yoktur. Üç komut:
 
     telemetry  Servoları hiç enerjilemeden durum, voltaj ve akımı okur.
@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CONFIG = ROOT / "config" / "hexapod.yml"
+DEFAULT_CONFIG = ROOT / "controller" / "hexapod" / "config" / "config.yml"
 CONTROLLER = ROOT / "controller"
 
 if str(CONTROLLER) not in sys.path:

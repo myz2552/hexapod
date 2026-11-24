@@ -1,11 +1,11 @@
 # software
 
-Raspberry Pi 5 üzerinde çalışan kendi yazılımımız. Hareket kontrolü (durum makinesi, yürüyüş, IK) Servo 2040 üzerindeki upstream firmware'dedir; Pi ile kart arasındaki protokolü upstream controller istemcisi (`controller/`, `hexapod` paketi) sağlar. Bu klasördeki kod o istemciyi kullanır, kendi protokolü yoktur (bkz. [docs/architecture.md](../docs/architecture.md)).
+Raspberry Pi 5 üzerinde çalışan kendi yazılımımız. Hareket kontrolü (durum makinesi, yürüyüş, IK) Servo 2040 üzerindeki firmware'dedir (`firmware/`); Pi ile kart arasındaki protokolü controller istemcisi (`controller/`, `hexapod` paketi) sağlar. Bu klasördeki kod o istemciyi kullanır, kendi protokolü yoktur (bkz. [docs/architecture.md](../docs/architecture.md)).
 
 ```text
 software/
 ├── bringup.py    telemetri okuma, ayakta durma, yürüyüş + CSV telemetri kaydı
-├── tests/        config/hexapod.yml doğrulaması ve bringup testleri (donanım gerekmez)
+├── tests/        robot config doğrulaması ve bringup testleri (donanım gerekmez)
 ├── gait/         yürüyüş karşılaştırma analizleri (yürüyüşün kendisi firmware'de)
 ├── sensors/      IMU ve gerekirse harici akım sensörü (Faz 2C)
 ├── vision/       kamera + YOLO (Faz 2A)
@@ -27,7 +27,7 @@ python -m software.bringup --help
 
 ```bash
 python -m unittest discover -s software -t . -v   # config + bringup
-bash controller/tests/run.sh                       # upstream istemci testleri
+bash controller/tests/run.sh                       # controller testleri
 ```
 
 GitHub Actions her push/PR'da ikisini Python 3.11 ve 3.13 ile çalıştırır.

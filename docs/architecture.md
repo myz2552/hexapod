@@ -1,6 +1,6 @@
 # Sistem Mimarisi
 
-Mekanik, elektronik ve hareket kontrolü upstream [H-0996](https://github.com/ggldnl/H-0996) projesiyle aynıdır. Projenin kendi katkısı Raspberry Pi tarafındaki üst katmandır: kamera, YOLO, itilebilirlik kararı, deney kaydı ve yürüyüş karşılaştırması.
+Mekanik, elektronik ve hareket kontrolü [H-0996](https://github.com/ggldnl/H-0996) projesiyle aynıdır; kodu ve CAD dosyaları bu repoda `firmware/`, `controller/` ve `hardware/` klasörlerindedir. Projenin kendi katkısı Raspberry Pi tarafındaki üst katmandır: kamera, YOLO, itilebilirlik kararı, deney kaydı ve yürüyüş karşılaştırması.
 
 ## Genel Sistem
 
@@ -13,7 +13,7 @@ Mekanik, elektronik ve hareket kontrolü upstream [H-0996](https://github.com/gg
               │----------------------│
               │ YOLO + karar (Faz 2) │
               │ software.bringup     │
-              │ controller (hexapod) │──── config/hexapod.yml
+              │ controller (hexapod) │──── config.yml
               └──────────┬───────────┘
                          │ UART 921600 baud (GPIO14/15 ↔ GP21/20) + 5 V + GND
                          ▼
@@ -39,11 +39,11 @@ Mekanik, elektronik ve hareket kontrolü upstream [H-0996](https://github.com/gg
 | Bacak FK/IK | Servo 2040 | `firmware/src/core/kinematics.hpp` |
 | PWM, servo gücü, akım/voltaj ölçümü | Servo 2040 | `firmware/src/communication/servo2040_hal.hpp` |
 | Seri protokol ve istemci | Pi | `controller/hexapod/` |
-| Robot yapılandırması ve kalibrasyon | Pi → karta gönderilir | `config/hexapod.yml` |
+| Robot yapılandırması ve kalibrasyon | Pi → karta gönderilir | `controller/hexapod/config/config.yml` |
 | Devreye alma, ayakta durma, yürüyüş kaydı | Pi | `software/bringup.py` |
 | Kamera, YOLO, karar | Pi | `software/vision`, `software/decision` (Faz 2) |
 
-Pi bağlanırken `config/hexapod.yml` içeriğini karta gönderir (provisioning). Ardından yalnızca yüksek seviyeli komutlar yollar: ayağa kalk / otur, yürüyüş tipi, hız (vx, vy, dönüş), gövde pozu ve heartbeat. Kart telemetri olarak durum, odometri, servo hattı voltajı ve akımını döndürür.
+Pi bağlanırken robot config'inin içeriğini karta gönderir (provisioning). Ardından yalnızca yüksek seviyeli komutlar yollar: ayağa kalk / otur, yürüyüş tipi, hız (vx, vy, dönüş), gövde pozu ve heartbeat. Kart telemetri olarak durum, odometri, servo hattı voltajı ve akımını döndürür.
 
 ## Güç
 
@@ -98,7 +98,7 @@ Karar katmanı hareketi controller istemcisi üzerinden uygular: PUSH yavaş ile
 
 ### Mekanik Platform
 
-Upstream [Hexapod-Hardware](https://github.com/ggldnl/H-0996-Hardware) parçaları PCB'siz kurulumla kullanılır: `electronics_mount` üzerinde Pi ve Servo 2040, `battery_mount` üzerinde batarya ve iki UBEC. Projeye özel değişiklikler: Hobbywing UBEC'ler için `battery_mount` yuvaları, kamera yuvası ve ön itme tamponu. Bkz. [cad-reference.md](cad-reference.md).
+[hardware/](../hardware/README.md) klasöründeki parçalar PCB'siz kurulumla kullanılır: `electronics_mount` üzerinde Pi ve Servo 2040, `battery_mount` üzerinde batarya ve iki UBEC. Projeye özel değişiklikler: Hobbywing UBEC'ler için `battery_mount` yuvaları, kamera yuvası ve ön itme tamponu. Bkz. [cad-reference.md](cad-reference.md).
 
 ### Kamera ve YOLO
 
@@ -119,7 +119,7 @@ Telemetri (`software.bringup --log`), hareket komutları, görsel tahmin, fiziks
 ## Tasarım İlkeleri
 
 - Faz 2'den önce ayakta durma ve yürüyüş doğrulanmalıdır.
-- Upstream firmware ve controller değiştirilmeden kullanılır; robota özel her şey `config/hexapod.yml` içindedir. Upstream kodunda değişiklik gerekirse önce fork yapılır ve [decisions.md](decisions.md) dosyasına kaydedilir.
+- Firmware ve controller kodu upstream ile aynı tutulur; robota özel her şey `controller/hexapod/config/config.yml` içindedir. Kodda değişiklik gerekirse önce [decisions.md](decisions.md) dosyasına kaydedilir ve değişiklik dosyada yorumla işaretlenir.
 - Servo kalibrasyonu, yön ve trim değerleri fiziksel ölçümle belirlenmeli; değerler uydurulmamalıdır.
 - MG996R servolar Raspberry Pi'den beslenmez.
 - Görsel tahmin, fiziksel doğrulama ve hareket başarısı ayrı kaydedilmelidir.

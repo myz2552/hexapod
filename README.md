@@ -55,13 +55,13 @@ Robot 2S LiPo ile çalışır. Bataryadan sonra 25 A sigorta ve iki UBEC vardır
 ## Hızlı Başlangıç
 
 ```bash
-git clone --recurse-submodules https://github.com/myz2552/hexapod.git
+git clone https://github.com/myz2552/hexapod.git
 cd hexapod
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 python -m software.bringup telemetry        # servoları enerjilemeden bağlantı testi
-python controller/calibrate.py --config config/hexapod.yml
+python controller/calibrate.py
 python -m software.bringup stand            # ayağa kalk, bekle, otur
 python -m software.bringup walk --gait tripod --vx 60 --log runs/tripod.csv
 ```
@@ -76,20 +76,19 @@ Raspberry Pi ayarları, firmware derleme/yükleme ve kalibrasyon: [kurulum](docs
 - [Donanım](docs/hardware.md): kesinleşmiş ve TBD donanım listesi
 - [Kurulum](docs/setup.md): Pi ayarları, firmware, kalibrasyon, ilk ayağa kalkma
 - [Bağlantılar](docs/wiring.md): UART, güç zinciri, kanal ataması, ilk açılış sırası
-- [CAD referansı](docs/cad-reference.md): mekanik referans platform ve lisans notları
+- [CAD referansı](docs/cad-reference.md): mekanik parçalar, değiştirilen parçalar ve lisans notları
 - [Teknik kararlar](docs/decisions.md): karar geçmişi
 
 ```text
-firmware/      Alt modül: ggldnl/H-0996-Firmware (Servo 2040, C++, GPL-3.0)
-controller/    Alt modül: ggldnl/H-0996-Controller (Pi istemcisi, Python, GPL-3.0)
-config/        hexapod.yml: robota özel ölçüler, kanal ataması, kalibrasyon, güvenlik sınırları
-cad/           Projeye göre değiştirilmiş CAD parçaları (upstream CAD kopyalanmaz)
+firmware/      Servo 2040 firmware'i (C++, upstream H-0996-Firmware'den, GPL-3.0)
+controller/    Pi istemcisi + robot config'i (Python, upstream H-0996-Controller'dan, GPL-3.0)
+hardware/      STL/STEP parçalar, URDF, montaj rehberi (upstream H-0996-Hardware'den, CERN-OHL-W)
 docs/          Proje belgeleri
 experiments/   Deney kayıtları
 software/      Pi tarafı kendi yazılımımız: bringup, Faz 2'de vision ve decision
 ```
 
-Kendi kodumuz upstream'i değiştirmez; robota özel her şey `config/hexapod.yml` içindedir.
+`firmware/`, `controller/` ve `hardware/` klasörleri [ggldnl/H-0996](https://github.com/ggldnl/H-0996) projesinden alınmıştır. Kod satırları aynıdır; yorumlar ve README'ler Türkçeye çevrilmiştir. Her klasörün README'sinde kaynak commit ve lisans yazar. Robota özel ayarlar (ölçüler, kanal ataması, kalibrasyon, güvenlik sınırları) `controller/hexapod/config/config.yml` içindedir.
 
 ## Durum
 

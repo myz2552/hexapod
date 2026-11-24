@@ -1,6 +1,7 @@
 # Raspberry Pi 5 üzerinde, repo kökünden: pip install -r requirements.txt
-# Upstream Pi tarafı istemcisi (controller/ alt modülü) + seri port + kalibrasyon aracı
-./controller[serial,calibrate]
-# controller/calibrate.py klavye girişi için kullanır, ancak paketin extras'ında yok
+# Pi tarafı istemcisi (controller/, `hexapod` paketi) düzenlenebilir modda: robot config'i
+# (controller/hexapod/config/config.yml) repodaki dosya olarak kalır, kalibrasyon oraya yazar.
+-e ./controller[serial,calibrate]
+# controller/calibrate.py klavye girişi için kullanır, ancak paketin eklerinde yok
 sshkeyboard
 PyYAML

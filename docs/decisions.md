@@ -86,6 +86,8 @@ Raspberry Pi 5, PCA9685, kamera, güç sistemi ve ön tampon projeye göre yenid
 Sonuç:
 Faz 1A'da tek bacak hızlıca üretilebilir. Upstream CAD dosyaları lisans/izin teyit edilene kadar bu repoya kopyalanmaz; yalnızca kaynak ve kullanılan parçalar belgelenir (bkz. docs/cad-reference.md).
 
+> 2026-11-24 güncellemesi: Lisans (CERN-OHL-W-2.0) incelendi; CAD dosyaları kaynak ve lisans korunarak `hardware/` klasörüne kopyalandı.
+
 ## 2026-10-20: Faz 2 engel davranışı
 
 Durum: Kabul edildi
@@ -107,7 +109,7 @@ Tek bacak prototipi yalnızca Faz 1 mekanik ve IK doğrulaması için kullanıl�
 
 Durum: İptal edildi
 
-> 2026-11-24 tarihli "Upstream H-0996 elektronik ve yazılım mimarisi" kararıyla geçersiz kalmıştır. Kalibrasyon ve kinematik artık upstream firmware ve `config/hexapod.yml` ile yapılır. İlgili kod (`software/kinematics`, `software/hardware`, `software/servo_test`, `software/single_leg`) repodan kaldırılmıştır; `ef46a24` commit'inde incelenebilir.
+> 2026-11-24 tarihli "Upstream H-0996 elektronik ve yazılım mimarisi" kararıyla geçersiz kalmıştır. Kalibrasyon ve kinematik artık `firmware/` ve `controller/hexapod/config/config.yml` ile yapılır. İlgili kod (`software/kinematics`, `software/hardware`, `software/servo_test`, `software/single_leg`) repodan kaldırılmıştır; `ef46a24` commit'inde incelenebilir.
 
 Bağlam:
 v1 kalibrasyon şeması (`neutral_deg`, `min_deg`, `max_deg`, `direction`) servo komut açısını gerçek eklem açısına çevirmeye yetmiyordu: "nötr" anlamsal olarak tanımsızdı, yönün neye göre olduğu belirtilmemişti ve 750..2250 µs eşlemesinin MG996R'nin gerçek açısına oturmaması (ölçek) hesaba katılmıyordu. Şema ayrıca tek kart ve sabit CH0..CH2 varsayıyordu; tam robotta 2 × PCA9685 kullanılacaktır.
@@ -154,20 +156,21 @@ Bağlam:
 Mekanik tasarım zaten upstream H-0996 projesinden alınmıştı. 2026-11-23 kararıyla Servo 2040'a geçilmişti, ancak kart için kendi firmware'imizi ve Pi tarafında kendi IK/yürüyüş kodumuzu yazmamız gerekiyordu. Upstream'in aynı mekanik ve aynı kart için çalışan, test edilmiş firmware'i (durum makinesi, tripod/wave/ripple yürüyüşü, IK, akım/voltaj koruması, watchdog) ve Pi tarafı istemcisi vardır. Ekibin önceliği robotu kısa sürede güvenle ayakta durdurup yürütmek ve proje katkısını Faz 2'ye (kamera, YOLO, itilebilirlik) ayırmaktır.
 
 Karar:
-- Elektronik ve hareket kontrolü upstream ile birebir aynıdır: Servo 2040 üzerinde [H-0996-Firmware](https://github.com/ggldnl/H-0996-Firmware), Raspberry Pi 5 üzerinde [H-0996-Controller](https://github.com/ggldnl/H-0996-Controller). İkisi `firmware/` ve `controller/` altında sabit commit'e kilitli git alt modülüdür ve değiştirilmeden kullanılır.
+- Elektronik ve hareket kontrolü upstream ile birebir aynıdır: Servo 2040 üzerinde [H-0996-Firmware](https://github.com/ggldnl/H-0996-Firmware), Raspberry Pi 5 üzerinde [H-0996-Controller](https://github.com/ggldnl/H-0996-Controller). Upstream depolar (mekanik için [H-0996-Hardware](https://github.com/ggldnl/H-0996-Hardware) de dahil) bu repoya `firmware/`, `controller/` ve `hardware/` klasörleri olarak kopyalanmıştır. Kod satırları aynıdır; kod içi yorumlar ve README'ler Türkçeye çevrilmiştir. Her klasörün README'sinde kaynak commit ve lisans yazar.
 - Pi ↔ Servo 2040 bağlantısı UART'tır (921600 baud, Pi GPIO14/15 ↔ GP21/GP20). Servo 2040'ın lojik beslemesi Pi'nin 5 V pininden gelir.
 - Upstream'in özel PCB'si kullanılmaz; `electronics_mount` ve elle kablolama kullanılır.
 - Güç: 2S LiPo → 25 A sigorta (upstream'de yok, ekledik) → Hobbywing UBEC 10A V2-Car (6,0 V, servolar, Servo 2040 klemensi) ve Hobbywing UBEC 5A V2-Air (5,0 V, Raspberry Pi 5 GPIO 5 V). Upstream iki adet iki kanallı 8 A UBEC kullanır; 10A V2-Car 5 V veremediği için Pi hattına ayrı bir model seçilmiştir.
 - Servo 2040'ın "Separate USB and Ext. Power" izi kesilir.
-- Robota özel tüm ayarlar `config/hexapod.yml` dosyasındadır (upstream `config.yml`'den türetilmiş, GPL-3.0). Kalibrasyon `controller/calibrate.py` ile yapılır.
+- Robota özel tüm ayarlar `controller/hexapod/config/config.yml` dosyasındadır. Kalibrasyon `controller/calibrate.py` ile yapılır ve sonucu bu dosyaya yazar.
 - Pi tarafında devreye alma, ayakta durma ve yürüyüş kaydı için `software/bringup.py` yazıldı; upstream istemcisini kullanır.
 - Önceki PCA9685 tabanlı Python kodu (kinematik, kalibrasyon v2, çıkış katmanı, bring-up araçları) kaldırıldı.
 
 Sonuç:
 - Faz 1'de firmware veya IK yazmak gerekmez; iş kurulum, kalibrasyon, ölçüm ve tripod/wave karşılaştırmasına iner.
 - Yürüyüş Servo 2040'ta gerçek zamanlı çalıştığı için Faz 2'de YOLO'nun Pi'deki yükü yürüyüşü bozmaz.
-- Yürüyüş algoritmasını değiştirmek C++ firmware'de değişiklik ve fork gerektirir. Böyle bir ihtiyaç doğarsa ayrı karar kaydı açılır.
+- Yürüyüş algoritmasını değiştirmek C++ firmware'de değişiklik gerektirir. Böyle bir ihtiyaç doğarsa ayrı karar kaydı açılır ve değişiklik kodda yorumla işaretlenir.
 - Kilitli upstream firmware sürümünde bazı host testleri başarısızdır; donanımda doğrulanana kadar bu not edilmiştir. CI controller testlerini ve config testlerini çalıştırır.
 - Upstream firmware'in akım kesmesi 12 A'dir; Servo 2040 klemensleri 10 A sürekli için tasarlanmıştır. İlk ayağa kalkma ve yürüyüşte akım ölçülerek gerekirse `safety.current_max` düşürülür.
-- Lisans: firmware ve controller GPL-3.0'dır. Alt modül olarak değiştirilmeden kullanılırlar; `config/hexapod.yml` GPL-3.0 olarak işaretlenmiştir.
+- Lisans: firmware ve controller GPL-3.0, mekanik tasarım CERN-OHL-W-2.0'dır. Lisans metinleri ilgili klasörlerde korunur; yorumların çevrilmesi gibi değişiklikler klasör README'lerinde belirtilmiştir.
+- Upstream'deki yeni sürümler otomatik gelmez; elle incelenip aktarılır (bkz. [setup.md](setup.md#upstreamden-güncelleme-almak)).
 

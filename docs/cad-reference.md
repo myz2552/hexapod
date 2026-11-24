@@ -2,40 +2,47 @@
 
 ## Kaynak
 
-Mekanik başlangıç noktası: [ggldnl/Hexapod-Hardware](https://github.com/ggldnl/Hexapod-Hardware)
+Mekanik tasarım [ggldnl/H-0996-Hardware](https://github.com/ggldnl/H-0996-Hardware) deposundan alınmıştır (commit `5d695c1`). STL, STEP, URDF ve montaj medyası bu repoda [hardware/](../hardware/README.md) klasöründedir; dosyalar değiştirilmeden kopyalanmış, README Türkçeye çevrilmiştir.
 
-Korunacak yaklaşımlar:
+| Klasör | İçerik |
+| --- | --- |
+| `hardware/CAD/stl/parts/` | Basılacak parçalar |
+| `hardware/CAD/step/parts/` | Düzenlemek için STEP dosyaları |
+| `hardware/CAD/stl/hardware/` | Simülasyon/URDF modelleri (servo, batarya, elektronik); basılmaz |
+| `hardware/hexapod.urdf` | Robotun URDF modeli |
+| `hardware/media/` | Montaj videoları ve fotoğrafları |
+| `hardware/CAD/modified/` | Projeye göre değiştirdiğimiz parçalar |
 
-- MG996R montaj geometrisi
-- F686ZZ rulmanlı servo yataklaması
-- M3 vida ve M3 heat-set insert ile montaj
+## Basılacak parçalar (tam robot, PCB'siz)
 
-Projeye göre yeniden tasarlanacak parçalar:
+| Parça | Adet |
+| --- | --- |
+| base | 1 |
+| top_stiffeners | 1 |
+| bottom_stiffeners | 1 |
+| femur | 6 |
+| tibia | 6 |
+| bracket_A | 18 |
+| bracket_B | 18 |
+| servo_mod | 18 |
+| battery_mount | 1 (Hobbywing UBEC'ler için uyarlanacak) |
+| electronics_mount | 1 |
 
-- `battery_mount` UBEC yuvaları: upstream'in iki kanallı 8 A UBEC'ine göre tasarlanmıştır. Kullandığımız Hobbywing 10A V2-Car (45 × 20 × 16,2 mm) ve 5A V2-Air (50 × 17 × 10 mm) için yuvalar uyarlanacak ya da UBEC'ler cırt bant/kelepçeyle sabitlenecek
-- Kamera yuvası (kamera modeli TBD)
-- Ön itme tamponu (Faz 2 PUSH ve kontrollü gövde teması için)
-- Sigorta yuvası (isteğe bağlı)
+Tek bacak testi için: femur 1, tibia 1, bracket_A 3, bracket_B 3, servo_mod 3.
 
-Upstream'den değiştirilmeden kullanılanlar: tüm bacak parçaları, base, stiffener'lar ve PCB'siz kurulum için `electronics_mount` (Raspberry Pi 5 + Servo 2040).
+## Projeye göre değiştirilecek parçalar
 
-## Tek Bacak İçin Referans Parçalar
+- `battery_mount` UBEC yuvaları: upstream'in iki kanallı 8 A UBEC'ine göre tasarlanmıştır. Kullandığımız Hobbywing 10A V2-Car (45 × 20 × 16,2 mm) ve 5A V2-Air (50 × 17 × 10 mm) için yuvalar uyarlanacak ya da UBEC'ler cırt bant/kelepçeyle sabitlenecek.
+- Kamera yuvası (kamera modeli TBD).
+- Ön itme tamponu (Faz 2 PUSH ve kontrollü gövde teması için).
+- Sigorta yuvası (isteğe bağlı).
 
-| Parça | Adet | Not |
-| --- | --- | --- |
-| femur | 1 | |
-| tibia | 1 | |
-| bracket_A | 3 | Upstream'de STL olarak mevcut; STEP tarafında `motor_bracket.step` olarak görünüyor |
-| bracket_B | 3 | Upstream'de STL olarak mevcut; STEP tarafında `motor_bracket.step` olarak görünüyor |
-| servo_mod | 3 servo için gerekli adet | Adet montaj sırasında doğrulanacak |
-| F686ZZ rulman | 3 | Satın alınan parça |
+Değiştirilen her parça `hardware/CAD/modified/` altına, hangi upstream parçadan türetildiği ve neyin değiştiği yazılarak konur.
 
-Değiştirilen parçalar `cad/modified/` altında tutulacak ve hangi upstream parçadan türetildikleri belirtilecektir.
+## Lisans
 
-## Lisans Notu
+Tasarım **CERN-OHL-W-2.0** (CERN Open Hardware Licence v2 – Weakly Reciprocal) lisanslıdır ([hardware/LICENSE.md](../hardware/LICENSE.md)). Bu repoda uyulması gerekenler:
 
-> Upstream repository'de açık bir LICENSE dosyası doğrulanmadan kaynak CAD dosyaları doğrudan bu repoya kopyalanmamalıdır.
->
-> STEP dosyaları yerel CAD geliştirmesinde referans olarak kullanılabilir; kamuya açık türetilmiş CAD paylaşımı öncesi lisans/izin teyit edilmelidir.
-
-Kontrol notu (2026-10-20): Upstream repoda bir `LICENSE.md` dosyası bulunmaktadır ve GitHub bunu **CERN-OHL-W-2.0** (CERN Open Hardware Licence v2 – Weakly Reciprocal) olarak tanımlamaktadır. Bu lisans; kaynak gösterilmesini, değiştirilen dosyaların aynı lisansla paylaşılmasını ve değişikliklerin belirtilmesini gerektirebilir. Lisans koşulları ekipçe okunup türetilmiş CAD paylaşımı için onaylanana kadar upstream STL/STEP dosyaları bu repoya commit edilmeyecektir. Bu repoda yalnızca kaynak bağlantısı, kullanılan parçalar ve değiştirilecek parçalar belgelenir.
+- Kaynak (ggldnl/H-0996-Hardware) ve lisans metni korunur.
+- Değiştirilen parçalar aynı lisansla paylaşılır ve değişiklikler belirtilir (`hardware/CAD/modified/` içindeki notlar).
+- Sunum ve raporlarda mekanik tasarımın kaynağı belirtilir.

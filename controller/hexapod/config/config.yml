@@ -1,0 +1,166 @@
+# H-0996 robot yapılandırması (TouchSight Hexapod'un kullandığı dosya).
+#
+# Controller bu değerleri bağlanırken (provisioning), enable()'dan önce, her bölüm
+# için bir mesaj olarak Servo2040'a gönderir. Kart derlenmiş varsayılanlarla gelir,
+# yani tek başına da çalışır; bu YAML yalnızca robota özel değerleri (özellikle
+# kalibrasyon aracının yazdığı servo başına `pulses` değerlerini) firmware'i yeniden
+# yüklemeden değiştirmeyi sağlar. Ayrıntılar için firmware config'ine bakın.
+#
+# Standart bacak sırası (değiştirilmemelidir): front_right, middle_right,
+# rear_right, rear_left, middle_left, front_left. Her bacakta eklemler her zaman
+# [coxa, femur, tibia] sırasındadır.
+#
+# Upstream'deki (ggldnl/H-0996-Controller) değerden farklı olarak değiştirdiğimiz
+# her değeri satırının yanına yorumla işaretleyin.
+
+# kart bölümleri (Servo2040'a gönderilir)
+
+kinematics:
+
+  # Bacak uzuv geometrisi (mm), altı bacak için ortak. `coxa`, coxa ekseninden
+  # coxa-femur eklemine kadar olan RADYAL mesafedir; `coxa_offset` bu eklemin eksenin
+  # ne kadar yanında durduğudur (+ sol, bacak boyunca dışarı bakarken) ve tüm
+  # femur/tibia düzlemini de beraberinde kaydırır. Bu robotta 0'dır: uzuv, coxa
+  # ekseninden geçen düzlem boyunca düz uzanır. URDF'teki eklem çerçevelerine
+  # dikkat edin; kendi eksenleri BOYUNCA bir yana kaymış durdukları için değer 22.4
+  # gibi görünür -- bacağın gerçekte nerede olduğunu yalnızca mesh'ler gösterir.
+  legs:
+    coxa: 68.0
+    coxa_offset: 0.0
+    femur: 76.7
+    tibia: 99.6
+
+  standing_height: 80.0   # mm, ayakta dururken gövde yüksekliği
+  stance_radius: 155.0    # mm, nötr ayak noktasının montaj noktasına uzaklığı
+
+  # Her bacağın gövdeye montaj yeri: gövde merkezine göre konum [x, y, z] mm ve
+  # yönelim [roll, pitch, yaw] derece. Coxa ekseni dikey olduğu için roll/pitch ile
+  # montaj yapılamaz ve karta gönderilmez; x, y, z ve yaw gönderilir. z, bacağın
+  # coxa-femur ekleminin gövde orijinine göre yüksekliğidir; gövde orijini o düzlemde
+  # alındığında 0 olur (burada öyle)
+  mounts:
+    front_right:
+      position: [82.0, -57.0, 0.0]
+      orientation: [0.0, 0.0, -45]
+
+    middle_right:
+      position: [0.0, -71.0, 0.0]
+      orientation: [0.0, 0.0, -90]
+
+    rear_right:
+      position: [-82.0, -57.0, 0.0]
+      orientation: [0.0, 0.0, -135]
+
+    rear_left:
+      position: [-82.0, 57.0, 0.0]
+      orientation: [0.0, 0.0, 135]
+
+    middle_left:
+      position: [0.0, 71.0, 0.0]
+      orientation: [0.0, 0.0, 90]
+
+    front_left:
+      position: [82.0, 57.0, 0.0]
+      orientation: [0.0, 0.0, 45]
+
+gaits:
+
+  # Her hızda cycle_time saniyede bir tam yürüyüş döngüsü (sabit tempo)
+  cycle_time: 0.8   # s
+
+  # duty_factor: döngü süresince ayağın yerde kaldığı oran
+  # max_stride:  erişilebilir adım sınırı (mm); hız arttıkça adım buraya kadar büyür
+  tripod:
+    duty_factor: 0.5
+    step_height: 60.0    # mm
+    max_stride: 120.0    # mm, azami hız ~300 mm/s
+    overlap: 0.0
+
+  wave:
+    duty_factor: 0.8333  # yavaş ve temkinli bir yürüyüşün duty factor'ü daha yüksek olabilir
+    step_height: 60.0    # mm
+    max_stride: 90.0     # mm, azami hız ~135 mm/s
+    overlap: 0.0
+
+  ripple:
+    duty_factor: 0.67
+    step_height: 60.0    # mm
+    max_stride: 110.0    # mm, azami hız ~205 mm/s
+    overlap: 0.0
+
+safety:
+
+  voltage_min: 5.0         # V, yazılımla düşük voltaj kesmesi -> FAULT
+  current_max: 12.0        # A, yazılımla aşırı akım kesmesi -> FAULT
+
+  lin_vel_max: 300         # mm/s
+  ang_vel_max: 60          # derece/s
+  vel_smooth_tau: 0.05     # s, birinci dereceden hız yumuşatma
+
+  body_lin_vel_max: 50     # mm/s, gövde pozu değişim hızı
+  body_ang_vel_max: 30     # derece/s, gövde pozu değişim hızı
+  joint_vel_max: 200       # derece/s, eklem değişim hızı
+
+  # Servo uzayında eklem sınırları (kırpma), eklem tipi başına. Kinematik eşlemenin
+  # çıktısı (kin_deg * direction + trim) servoları sürmeden önce bu sınırlara kırpılır
+  coxa_range: [-90, 90]
+  femur_range: [-90, 90]
+  tibia_range: [-120, 0]   # tibia minimumunda boşluk payı (servo zorlanıp takılabilir)
+
+  # Gövde pozu komut sınırları (ayakta duruşa göre ofsetler), her biri bağımsız [min, max]
+  x_range: [-50, 50]       # mm
+  y_range: [-50, 50]       # mm
+  z_range: [-20, 20]       # mm, ayakta duruş yüksekliğine göre
+  roll_range: [-10, 10]    # derece
+  pitch_range: [-10, 10]   # derece
+  yaw_range: [-10, 10]     # derece
+
+hardware:
+
+  # Fiziksel kablolama, HAL'de uygulanır (kinematik modelde değil). Her mantıksal
+  # kanalı süren fiziksel çıkış, bacak başına [coxa, femur, tibia]
+  pins:
+    front_right:  [0, 1, 2]
+    middle_right: [3, 4, 5]
+    rear_right:   [6, 7, 8]
+    rear_left:    [9, 10, 11]
+    middle_left:  [12, 13, 14]
+    front_left:   [15, 16, 17]
+
+  # Derece cinsinden servo kalibrasyon ofsetleri, bacak başına [coxa, femur, tibia].
+  # Yapısaldır (ör. tibia uzvu bir üçgendir, bu yüzden servo -163 derece = kinematik 0).
+  # `direction` ile birlikte servo-kinematik eşlemeyi oluşturur; kırpma safety.*_range'dedir
+  trim:
+    front_right:  [0, 0, -163]
+    middle_right: [0, 0, -163]
+    rear_right:   [0, 0, -163]
+    rear_left:    [0, 0, -163]
+    middle_left:  [0, 0, -163]
+    front_left:   [0, 0, -163]
+
+  # Servo yön çarpanları (1 veya -1), bacak başına [coxa, femur, tibia]
+  direction:
+    front_right:  [-1, 1, -1]
+    middle_right: [-1, 1, -1]
+    rear_right:   [-1, 1, -1]
+    rear_left:    [-1, 1, -1]
+    middle_left:  [-1, 1, -1]
+    front_left:   [-1, 1, -1]
+
+  # Servo başına [-90, 0, +90] derecede ölçülmüş darbe genişlikleri (mikrosaniye),
+  # controller/calibrate.py tarafından yazılır. Eklemin yapısal aralığından bağımsızdır
+  # (o hardware.trim/direction + safety.*_range'dedir). Kalibrasyona kadar değerler
+  # yer tutucudur; bacak başına sıra [coxa, femur, tibia], her üçlü [darbe@-90, darbe@0, darbe@+90]
+  pulses:
+    front_right:  [[500, 1500, 2500], [500, 1500, 2500], [500, 1500, 2500]]
+    middle_right: [[500, 1500, 2500], [500, 1500, 2500], [500, 1500, 2500]]
+    rear_right:   [[500, 1500, 2500], [500, 1500, 2500], [500, 1500, 2500]]
+    rear_left:    [[500, 1500, 2500], [500, 1500, 2500], [500, 1500, 2500]]
+    middle_left:  [[500, 1500, 2500], [500, 1500, 2500], [500, 1500, 2500]]
+    front_left:   [[500, 1500, 2500], [500, 1500, 2500], [500, 1500, 2500]]
+
+# yalnızca Pi tarafı (karta gönderilmez): Pi'nin bağlantıyı nasıl açacağı
+
+serial:
+  port: /dev/ttyAMA0
+  baud: 921600   # firmware config'indeki BAUD ile aynı olmalı

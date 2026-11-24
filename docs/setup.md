@@ -1,21 +1,20 @@
 # Yazılım Kurulumu ve Devreye Alma
 
-Robotun kontrol döngüsü (durum makinesi, yürüyüş üreteci, inverse kinematics) Servo 2040 üzerinde, upstream [H-0996-Firmware](https://github.com/ggldnl/H-0996-Firmware) ile çalışır. Raspberry Pi 5, upstream [H-0996-Controller](https://github.com/ggldnl/H-0996-Controller) istemcisiyle karta yüksek seviyeli komutlar gönderir (hız, yürüyüş tipi, gövde pozu) ve telemetri okur. İki depo bu repoda sabit bir commit'e kilitli git alt modülü olarak bulunur:
+Robotun kontrol döngüsü (durum makinesi, yürüyüş üreteci, inverse kinematics) Servo 2040 üzerinde, [firmware/](../firmware/README.md) klasöründeki kodla çalışır. Raspberry Pi 5, [controller/](../controller/README.md) klasöründeki istemciyle karta yüksek seviyeli komutlar gönderir (hız, yürüyüş tipi, gövde pozu) ve telemetri okur.
 
-| Klasör | Depo | Lisans |
+| Klasör | Kaynak | Lisans |
 | --- | --- | --- |
-| `firmware/` | ggldnl/H-0996-Firmware | GPL-3.0 |
-| `controller/` | ggldnl/H-0996-Controller | GPL-3.0 |
+| `firmware/` | ggldnl/H-0996-Firmware, `163eb03` | GPL-3.0 |
+| `controller/` | ggldnl/H-0996-Controller, `103f3c3` | GPL-3.0 |
+| `hardware/` | ggldnl/H-0996-Hardware, `5d695c1` | CERN-OHL-W-2.0 |
 
-Robotumuza özel ayarlar (bacak ölçüleri, kanal ataması, servo kalibrasyonu, güvenlik sınırları) `config/hexapod.yml` dosyasındadır.
+Kod satırları upstream ile aynıdır; yorumlar ve README'ler Türkçeye çevrilmiştir. Robotumuza özel ayarlar (bacak ölçüleri, kanal ataması, servo kalibrasyonu, güvenlik sınırları) `controller/hexapod/config/config.yml` dosyasındadır.
 
 ## 1. Repoyu klonlama
 
 ```bash
-git clone --recurse-submodules https://github.com/myz2552/hexapod.git
+git clone https://github.com/myz2552/hexapod.git
 cd hexapod
-# Alt modüller olmadan klonlandıysa:
-git submodule update --init
 ```
 
 ## 2. Raspberry Pi 5 ayarları
@@ -56,7 +55,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Bu komut upstream istemcisini (`hexapod` paketi), `pyserial`, `ruamel.yaml` ve kalibrasyon aracının klavye kütüphanesini kurar.
+Bu komut `controller/` klasöründeki istemciyi (`hexapod` paketi) düzenlenebilir modda, ayrıca `pyserial`, `ruamel.yaml` ve kalibrasyon aracının klavye kütüphanesini kurar. Düzenlenebilir kurulum sayesinde robot config'i repodaki dosyadır; kalibrasyon aracı sonuçları doğrudan oraya yazar.
 
 ## 4. Firmware'i derleme ve yükleme
 
@@ -98,15 +97,15 @@ Beklenen çıktı: durum `OFF`, servo hattının voltajı ve akımı. `no reply`
 - `/dev/ttyAMA0` yoktur veya seri konsol açıktır (2. adım).
 - Kartta firmware yoktur (4. adım).
 
-Upstream'in salt okunur test betiği de kullanılabilir: `python firmware/protocol_test.py`.
+Firmware'in salt okunur test betiği de kullanılabilir: `python firmware/protocol_test.py`.
 
 ## 6. Servo kalibrasyonu
 
 Her servonun -90° ve +90° konumlarını veren darbe genişlikleri tek tek ölçülür. Kalibrasyonu servolar bacaklara takılmadan, boştayken yapın.
 
 ```bash
-python controller/calibrate.py --config config/hexapod.yml               # 18 servo
-python controller/calibrate.py --config config/hexapod.yml --channels 0 1 2   # yalnızca front_right
+python controller/calibrate.py               # 18 servo
+python controller/calibrate.py --channels 0 1 2   # yalnızca front_right
 ```
 
 | Tuş | İşlev |
@@ -117,11 +116,11 @@ python controller/calibrate.py --config config/hexapod.yml --channels 0 1 2   # 
 | u / Backspace | son kaydı geri al |
 | q / Esc | kaydet ve çık |
 
-Araç sonuçları `config/hexapod.yml` içindeki `hardware.pulses` alanına yazar. Dosyayı commit edin.
+Araç sonuçları `controller/hexapod/config/config.yml` içindeki `hardware.pulses` alanına yazar. Dosyayı commit edin.
 
 ## 7. Montaj ve ilk ayağa kalkma
 
-1. Servoları upstream montaj videosundaki (`leg_assembly`) pozlara göre bacaklara takın. Kanal ataması: [wiring.md](wiring.md#servo-kanal-ataması).
+1. Servoları montaj videosundaki ([hardware/README.md](../hardware/README.md#-montaj-talimatları), `leg_assembly`) pozlara göre bacaklara takın. Kanal ataması: [wiring.md](wiring.md#servo-kanal-ataması).
 2. Robotu bacakları havada kalacak şekilde bir desteğe koyun.
 3. Ayağa kalkma komutunu verin:
 
@@ -139,9 +138,9 @@ python -m software.bringup walk --gait tripod --vx 60 --seconds 8 --log runs/tri
 python -m software.bringup walk --gait wave   --vx 40 --seconds 8 --log runs/wave_40.csv
 ```
 
-Firmware üç yürüyüş tipini destekler: `tripod`, `wave`, `ripple`. Hız sınırları ve adım parametreleri `config/hexapod.yml` içindeki `gaits` ve `safety` bölümlerindedir. CSV kayıtları (`runs/` git'e girmez) deney sonuçlarıyla birlikte `experiments/walking/` altına özetlenir.
+Firmware üç yürüyüş tipini destekler: `tripod`, `wave`, `ripple`. Hız sınırları ve adım parametreleri `controller/hexapod/config/config.yml` içindeki `gaits` ve `safety` bölümlerindedir. CSV kayıtları (`runs/` git'e girmez) deney sonuçlarıyla birlikte `experiments/walking/` altına özetlenir.
 
-Upstream'in zamanlı demo betiği de çalışır: `python controller/demo.py --config config/hexapod.yml`.
+Controller'ın zamanlı demo betiği de çalışır: `python controller/demo.py`.
 
 ## Güvenlik davranışları (firmware)
 
@@ -149,14 +148,8 @@ Upstream'in zamanlı demo betiği de çalışır: `python controller/demo.py --c
 - Toplam servo akımı `safety.current_max` (12 A) üstüne çıkarsa ya da servo hattı voltajı `safety.voltage_min` (5 V) altına düşerse kart `FAULT` durumuna geçer ve servoları keser.
 - `software.bringup` Ctrl-C ile durdurulduğunda robotu oturtur.
 
-## Alt modülleri güncelleme
+## Upstream'den güncelleme almak
 
-Upstream'de yeni bir sürüm denemek için:
+Upstream depolarda yeni bir sürüm çıkarsa değişiklikler elle aktarılır: upstream'deki farkı (`git diff <eski>..<yeni>`) inceleyin, kod değişikliklerini ilgili klasöre uygulayın, yeni yorumları Türkçeye çevirin ve README'deki kaynak commit'i güncelleyin. Firmware ve controller aynı protokol sürümünde olmalıdır; ikisini birlikte güncelleyin.
 
-```bash
-cd firmware && git fetch && git checkout <commit> && cd ..
-cd controller && git fetch && git checkout <commit> && cd ..
-git add firmware controller && git commit -m "build: bump upstream firmware/controller"
-```
-
-Firmware ve controller aynı protokol sürümünde olmalıdır; ikisini birlikte güncelleyin. Kilitli sürümlerde upstream firmware'in kendi host testlerinin bir kısmı (`firmware/test/run.sh`, `test_robot`) başarısızdır; bu yüzden CI yalnızca controller testlerini ve bizim config testlerimizi çalıştırır.
+Aldığımız sürümde firmware'in kendi host testlerinin bir kısmı (`firmware/test/run.sh`, `test_robot`) upstream'de de başarısızdır; bu yüzden CI yalnızca controller testlerini ve bizim testlerimizi çalıştırır.

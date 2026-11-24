@@ -8,7 +8,7 @@ Bu repo, TouchSight Hexapod projesinin mekanik, elektronik, yazılım ve deney b
 - Deney sonuçlarını tarih, donanım durumu ve kullanılan yazılım sürümüyle birlikte kaydedin.
 - Mekanik veya elektronik değişikliklerin yazılım etkisini not edin.
 - Kararları `docs/decisions.md` dosyasına kısa kayıtlar olarak ekleyin.
-- `firmware/` ve `controller/` alt modüllerinde değişiklik yapmayın. Robota özel ayarlar `config/hexapod.yml` içine gider; `hardware.direction`, `hardware.trim` veya `safety` değerlerini değiştirirseniz satıra yorum ekleyin.
+- `firmware/` ve `controller/` kodunu upstream ile aynı tutun; değiştirmeniz gerekirse önce `docs/decisions.md`'ye kaydedin ve değişikliği yorumla işaretleyin. Robota özel ayarlar `controller/hexapod/config/config.yml` içine gider; `hardware.direction`, `hardware.trim` veya `safety` değerlerini değiştirirseniz satıra yorum ekleyin.
 - Commit öncesi testler: `python -m unittest discover -s software -t . -v` ve `bash controller/tests/run.sh`.
 
 ## Belge Dili
@@ -20,10 +20,9 @@ Ana proje belgeleri Türkçe tutulacaktır. Kod içi yorumlar ve dosya adları g
 Önerilen ilerleyen repo yapısı:
 
 ```text
-firmware/      Alt modül: upstream Servo 2040 firmware'i (değiştirilmez)
-controller/    Alt modül: upstream Pi istemcisi (değiştirilmez)
-cad/           Projeye göre değiştirilmiş CAD parçaları (upstream CAD kopyalanmaz, bkz. docs/cad-reference.md)
-config/        hexapod.yml: robota özel yapılandırma ve kalibrasyon
+firmware/      Servo 2040 firmware'i (upstream H-0996-Firmware'den, Türkçe yorumlu)
+controller/    Pi istemcisi ve robot config'i hexapod/config/config.yml (upstream H-0996-Controller'dan)
+hardware/      Mekanik parçalar ve montaj rehberi (upstream H-0996-Hardware'den); değiştirdiğimiz parçalar CAD/modified/
 docs/          Proje belgeleri
 experiments/   Deney kayıtları (single_leg, walking, vision, pushability)
 software/      Kendi Pi yazılımımız (bringup; Faz 2'de vision, decision, sensors)
@@ -36,7 +35,7 @@ Faz 1'de her mekanik, elektronik, servo kalibrasyonu, tek bacak IK veya yürüy�
 - Tarih
 - Robot mekanik durumu
 - Pil veya güç durumu
-- Kullanılan güç ayarları (UBEC voltajları, batarya voltajı) ve `config/hexapod.yml` commit'i
+- Kullanılan güç ayarları (UBEC voltajları, batarya voltajı) ve `controller/hexapod/config/config.yml` commit'i
 - Test edilen hareket (yürüyüş tipi, hız) ve varsa telemetri CSV dosyası (`software.bringup --log`)
 - Gözlenen sorunlar
 - Başarılı / başarısız sonucu

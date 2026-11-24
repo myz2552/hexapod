@@ -1,0 +1,7 @@
+# Build and shit
+build/*
+__pycache__/*
+
+# IDEs
+.idea/*
+.vscode/*

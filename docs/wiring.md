@@ -34,7 +34,7 @@ Upstream firmware UART1'i kullanır: GP20 (TX) ve GP21 (RX). Bu pinler Servo 204
 
 ## Servo kanal ataması
 
-Atama `config/hexapod.yml` içindeki `hardware.pins` ile aynıdır. Yazılımdaki numaralar 0'dan başlar; kartın üzerindeki baskıda çıkışlar 1'den başlar.
+Atama `controller/hexapod/config/config.yml` içindeki `hardware.pins` ile aynıdır. Yazılımdaki numaralar 0'dan başlar; kartın üzerindeki baskıda çıkışlar 1'den başlar.
 
 | Bacak | Coxa | Femur | Tibia |
 | --- | --- | --- | --- |
@@ -87,7 +87,7 @@ Tüm eksiler ortaktır.
 Upstream yerleşimi korunur:
 
 - Batarya gövdenin altında, `battery_mount` üzerinde.
-- UBEC'ler `battery_mount`'ın iki yuvasında. Yuvalar upstream'in UBEC modeline göredir; Hobbywing modelleri için yuvalar ekip tarafından uyarlanacaktır (bkz. [cad-reference.md](cad-reference.md)).
+- UBEC'ler `battery_mount`'ın iki yuvasında. Yuvalar upstream'in UBEC modeline göredir; Hobbywing modelleri için yuvalar ekip tarafından uyarlanacaktır (`hardware/CAD/modified/`, bkz. [cad-reference.md](cad-reference.md)).
 - Raspberry Pi 5 ve Servo 2040 gövdenin üstünde, `electronics_mount` üzerinde. Servo 2040 M2 vida ve M2 heat-set insert ile takılır.
 - Sigorta bataryaya olabildiğince yakın, UBEC S'nin anahtarı kolay erişilebilir yerde.
 

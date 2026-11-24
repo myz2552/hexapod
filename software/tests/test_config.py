@@ -1,7 +1,7 @@
-"""config/hexapod.yml dosyasını upstream controller'ın kendi doğrulamasıyla kontrol eder.
+"""Robot config'ini (controller/hexapod/config/config.yml) controller'ın kendi
+doğrulamasıyla kontrol eder.
 
-Donanım ve pyserial gerekmez: provisioning mesajları sahte bir karta gönderilir.
-Controller alt modülü (git submodule) yoksa testler atlanır.
+Donanım ve pyserial gerekmez: yapılandırma mesajları sahte bir karta gönderilir.
 """
 import struct
 import sys
@@ -11,20 +11,15 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-CONFIG = ROOT / "config" / "hexapod.yml"
 CONTROLLER = ROOT / "controller"
+CONFIG = CONTROLLER / "hexapod" / "config" / "config.yml"
 
-if (CONTROLLER / "hexapod" / "client.py").exists():
-    sys.path.insert(0, str(CONTROLLER))
-    from hexapod import HexapodClient, Opcode, Status  # noqa: E402
-    from hexapod import protocol as P  # noqa: E402
-    from hexapod.client import JOINTS, LEGS  # noqa: E402
-    from hexapod.framing import FrameParser, encode_frame  # noqa: E402
-    from hexapod.transport import Transport  # noqa: E402
-    HAVE_CONTROLLER = True
-else:  # pragma: no cover - submodule yoksa
-    Transport = object
-    HAVE_CONTROLLER = False
+sys.path.insert(0, str(CONTROLLER))
+from hexapod import HexapodClient, Opcode, Status  # noqa: E402
+from hexapod import protocol as P  # noqa: E402
+from hexapod.client import JOINTS, LEGS  # noqa: E402
+from hexapod.framing import FrameParser, encode_frame  # noqa: E402
+from hexapod.transport import Transport  # noqa: E402
 
 
 class AckingBoard(Transport):
@@ -53,7 +48,6 @@ def load():
         return yaml.safe_load(f)
 
 
-@unittest.skipUnless(HAVE_CONTROLLER, "controller alt modülü yok (git submodule update --init)")
 class ConfigProvisioningTest(unittest.TestCase):
     def test_provisions_every_section(self):
         board = AckingBoard()
@@ -70,13 +64,15 @@ class ConfigProvisioningTest(unittest.TestCase):
         pins = [p for leg in LEGS for p in load()["hardware"]["pins"][leg]]
         self.assertEqual(sorted(pins), list(range(18)))
 
-    def test_pulses_are_ordered_and_in_range(self):
+    def test_pulses_are_monotonic_and_in_range(self):
+        # [darbe@-90, darbe@0, darbe@+90]; darbesi açıyla azalan servolar ters sıralı olabilir
         pulses = load()["hardware"]["pulses"]
         for leg in LEGS:
             self.assertEqual(len(pulses[leg]), len(JOINTS), leg)
             for joint, (lo, mid, hi) in zip(JOINTS, pulses[leg]):
                 where = f"{leg}.{joint}"
-                self.assertTrue(500 <= lo < mid < hi <= 2500, where)
+                self.assertTrue(all(500 <= p <= 2500 for p in (lo, mid, hi)), where)
+                self.assertTrue(lo < mid < hi or lo > mid > hi, where)
 
     def test_safety_limits_match_hardware(self):
         cfg = load()

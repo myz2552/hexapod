@@ -1,7 +1,0 @@
-[submodule "firmware"]
-	path = firmware
-	url = https://github.com/ggldnl/H-0996-Firmware.git
-	ignore = dirty
-[submodule "controller"]
-	path = controller
-	url = https://github.com/ggldnl/H-0996-Controller.git

@@ -14,14 +14,12 @@ jobs:
         python-version: ["3.11", "3.13"]
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install test dependencies (no hardware libraries)
         run: python -m pip install PyYAML
-      - name: Robot config (config/hexapod.yml) against the upstream controller
+      - name: Robot config and bringup tests
         run: python -m unittest discover -s software -t . -v
-      - name: Upstream controller tests (pinned submodule)
+      - name: Controller tests
         run: bash controller/tests/run.sh
