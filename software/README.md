@@ -1,43 +1,37 @@
 # software
 
-Raspberry Pi 5 üzerinde çalışan yazılım. Hedef donanımda servo PWM sinyalleri, Pi'ye USB ile bağlı Servo 2040 tarafından üretilir.
-
-> **Geçiş notu (2026-11-23):** Donanım PCA9685'ten Servo 2040'a geçmiştir (bkz. [docs/decisions.md](../docs/decisions.md)). Bu klasördeki kod henüz PCA9685 içindir ve Servo 2040 çıkış sürücüsü eklenene kadar referans olarak korunur.
-> Mevcut `servo_test` ve `hardware/pca9685_bank.py` PCA9685 içindir; Servo 2040 firmware'i ve çıkış sürücüsü Faz 1A'da eklenecektir (bkz. [docs/roadmap.md](../docs/roadmap.md)).
+Raspberry Pi 5 üzerinde çalışan kendi yazılımımız. Hareket kontrolü (durum makinesi, yürüyüş, IK) Servo 2040 üzerindeki upstream firmware'dedir; Pi ile kart arasındaki protokolü upstream controller istemcisi (`controller/`, `hexapod` paketi) sağlar. Bu klasördeki kod o istemciyi kullanır, kendi protokolü yoktur (bkz. [docs/architecture.md](../docs/architecture.md)).
 
 ```text
 software/
-├── servo_test/   PCA9685 bring-up ve manuel servo kalibrasyonu (şema v2)
-├── hardware/     kalibrasyon (eklem açısı ↔ komut), çoklu PCA9685, hız sınırlı hareket
-├── kinematics/   bacak FK/IK, gövde ↔ bacak çerçeveleri
-├── single_leg/   Faz 1A XYZ ayak pozisyonlama aracı
-├── gait/         tripod gait (henüz yok)
-├── vision/       kamera + YOLO (henüz yok)
-├── decision/     FORWARD / PUSH / AVOID / STOP/BACK (henüz yok)
-└── sensors/      akım sensörü ve IMU (henüz yok)
+├── bringup.py    telemetri okuma, ayakta durma, yürüyüş + CSV telemetri kaydı
+├── tests/        config/hexapod.yml doğrulaması ve bringup testleri (donanım gerekmez)
+├── gait/         yürüyüş karşılaştırma analizleri (yürüyüşün kendisi firmware'de)
+├── sensors/      IMU ve gerekirse harici akım sensörü (Faz 2C)
+├── vision/       kamera + YOLO (Faz 2A)
+└── decision/     FORWARD / PUSH / AVOID / STOP/BACK (Faz 2B-2C)
 ```
 
-Katmanlar:
+## Kullanım
 
-```text
-gait / single_leg   →  ayak hedefi (mm)
-kinematics          →  kinematik eklem açısı (°)
-hardware            →  kalibrasyon + hız sınırı → PCA9685 komutu
-```
-
-Yapılandırma `config/` altındadır: `robot_geometry.yaml` (bacak ölçüleri, git'te) ve
-`servo_calibration.yaml` (fiziksel kalibrasyon, gitignore; örnek: `servo_calibration.example.yaml`).
-
-## Geliştirme
-
-Repo kökünden:
+Kurulum ve donanım adımları: [docs/setup.md](../docs/setup.md). Repo kökünden:
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e .              # testler ve kuru çalıştırma için (yalnızca PyYAML)
-pip install -e ".[hardware]"  # Raspberry Pi üzerinde, PCA9685 erişimi için
-python -m unittest discover -s software -t . -v
+python -m software.bringup telemetry
+python -m software.bringup stand --seconds 10
+python -m software.bringup walk --gait wave --vx 40 --seconds 8 --log runs/wave_40.csv
+python -m software.bringup --help
 ```
 
-Testler donanım gerektirmez; GitHub Actions her push/PR'da aynı testleri Python 3.11 ve 3.13 ile çalıştırır.
-Paket kurmadan da araçlar `python -m software.<paket>.<modül>` ile repo kökünden çalışır.
+## Testler
+
+```bash
+python -m unittest discover -s software -t . -v   # config + bringup
+bash controller/tests/run.sh                       # upstream istemci testleri
+```
+
+GitHub Actions her push/PR'da ikisini Python 3.11 ve 3.13 ile çalıştırır.
+
+## Faz 2 kodu için kural
+
+Hareket komutları yalnızca `hexapod.HexapodClient` üzerinden gönderilir (`set_velocity`, `stop`, `set_body_pose`, `heartbeat`). Kart 500 ms heartbeat almazsa oturur; YOLO döngüsü uzun sürüyorsa heartbeat ayrı bir iş parçacığından gönderilmelidir.

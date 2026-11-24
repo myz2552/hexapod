@@ -1,53 +1,57 @@
 # Donanım
 
-## Kesinleşmiş Donanım
+Donanım upstream [H-0996-Hardware](https://github.com/ggldnl/H-0996-Hardware) malzeme listesiyle aynıdır; upstream'in özel PCB'si kullanılmaz. Farklar tablolarda "Upstream'den farkı" sütununda belirtilmiştir.
 
-| Bileşen | Görev | Not |
+## Elektronik
+
+| Bileşen | Adet | Görev | Upstream'den farkı |
+| --- | --- | --- | --- |
+| Raspberry Pi 5 | 1 | Ana bilgisayar: controller istemcisi, Faz 2'de kamera, YOLO, karar | — |
+| Pimoroni Servo 2040 | 1 | RP2040 tabanlı 18 kanallı servo kartı. Upstream firmware ile durum makinesi, yürüyüş, IK, PWM, akım/voltaj ölçümü ve watchdog | — |
+| MG996R 180° | 18 | Eklem servosu (Coxa / Femur / Tibia) | — |
+| 2S LiPo (7,4 V), XT60 | 1 | Batarya | — |
+| Hobbywing UBEC 10A V2-Car (HW30603003) | 1 | Servo hattı, **6,0 V**. Giriş 2–6S, 10 A sürekli / 15 A tepe, çıkış 6,0 / 7,4 / 8,4 V seçilebilir, açma/kapama anahtarı | Upstream: iki kanallı 8 A UBEC |
+| Hobbywing UBEC 5A V2-Air (HW30607000) | 1 | Raspberry Pi 5 + Servo 2040 lojik, **5,0 V**. Giriş 2–8S, 5 A sürekli / 15 A tepe, çıkış 5,0 / 6,0 / 7,4 V seçilebilir | Upstream: iki kanallı 8 A UBEC |
+| 25 A bıçak sigorta + kablolu yuva | 1 | Batarya ile UBEC girişleri arası koruma | Upstream'de yok; önerilir |
+
+## Kablolama (PCB'siz kurulum)
+
+| Parça | Not |
+| --- | --- |
+| XT60 erkek soket | Bataryayı UBEC girişlerine bağlar |
+| 14 AWG ve 18–20 AWG silikon kablo, makaron | Güç hatları |
+| Servo uzatma kabloları | Arka bacaklar Servo 2040'a yetişmez |
+| Qw/ST (STEMMA QT) → dişi jumper kablo, dişi-dişi jumper kablolar | Pi ↔ Servo 2040 UART ve 5 V |
+| USB-C veri kablosu | Yalnızca firmware yüklemek için |
+| LiPo şarj cihazı (balanslı), 2S voltaj alarmı | Batarya bakımı |
+| Multimetre | UBEC çıkışlarını bağlamadan önce ölçmek için |
+
+## Mekanik
+
+| Bileşen | Adet | Not |
 | --- | --- | --- |
-| Raspberry Pi 5 | Ana bilgisayar | YOLO, karar, IK, gait ve sensör okuma |
-| Pimoroni Servo 2040 | Servo PWM kontrolü | RP2040 tabanlı 18 kanallı servo kontrol kartı. Raspberry Pi 5'e USB ile bağlanır (seri haberleşme + kartın lojik beslemesi). Servo güç hattında akım ve voltaj ölçümü, 6 analog sensör girişi ve bir Qw/ST (I2C) konnektörü vardır. 62 × 42 × 12 mm, M2.5 montaj delikleri. |
-| MG996R 180° | Eklem servosu | Positional servo; Coxa / Femur / Tibia |
-| UBEC 10 A (2S–6S giriş, 5/6 V seçilebilir) | Güç dönüştürücü | Aynı modelden 2 adet: biri 6,0 V (servolar), biri 5,0 V (Raspberry Pi 5). Örnek: Hobbywing UBEC 10A 2-6S (10 A sürekli / 20 A tepe). |
-| 2S LiPo, XT60 | Batarya | Kapasite deneylerden sonra kesinleşecek; başlangıç önerisi 5000 mAh, ≥ 25C |
-| F686ZZ | Servo yataklama rulmanı | Servo karşı tarafında eksen desteği |
-| M3 vidalar | Montaj | |
-| M3 heat-set insert | 3B baskı parçalara diş | |
+| 3B baskı parçalar | base 1, top_stiffeners 1, bottom_stiffeners 1, femur 6, tibia 6, bracket_A 18, bracket_B 18, servo_mod 18, battery_mount 1, electronics_mount 1 | PCB'siz kurulum için `electronics_mount` gerekir |
+| F686ZZ rulman | 18 | Servo karşı tarafında eksen desteği |
+| M3 vida | ~92 | |
+| M3 heat-set insert | ~92 | Baskı delikleri Ø4,5 mm olduğu için OD 5 mm, L 4 mm kullanılır |
+| M2 vida + M2 heat-set insert | birkaç adet | Servo 2040'ı `electronics_mount`'a sabitlemek için (montaj delikleri 2,7 mm) |
 
-ESP32 kullanılmayacaktır. PCA9685 tabanlı tasarımdan Servo 2040'a geçiş gerekçesi için bkz. [decisions.md](decisions.md).
+## Tek bacak testi
 
-## Güç Sistemi Parçaları
-
-| Parça | Önerilen özellik | Not |
-| --- | --- | --- |
-| Sigorta | 25 A bıçak sigorta + hat içi yuva | Bataryadan hemen sonra |
-| Ana anahtar | ≥ 30 A | Kolay erişilebilir yerde |
-| Dağıtım | XT60 Y-ayırıcı kablo | Ayrı dağıtım kartı gerekmez |
-| Kondansatör | 2200 µF, ≥ 16 V elektrolitik | Servo 2040 servo güç klemenslerine |
-| Pi güç kablosu | Açık uç → USB-C erkek güç kablosu | 5 V UBEC'i Pi'nin USB-C girişine bağlar; ters takılamaz |
-| USB kablosu | USB-A → USB-C, 15–20 cm | Raspberry Pi 5 ↔ Servo 2040 |
-| LiPo voltaj alarmı | 2S | Aşırı deşarjı önler |
-
-## Adetler
-
-| Bileşen | Tek bacak prototipi | Tam robot |
-| --- | --- | --- |
-| MG996R 180° | 3 | 18 |
-| Servo 2040 | 1 | 1 |
-| UBEC 10 A | — (laboratuvar güç kaynağı) | 2 (+1 yedek önerilir) |
-| 2S LiPo | — | 1 |
-| F686ZZ | 3 | 18 |
-| Raspberry Pi 5 | 1 | 1 |
-
-İlk tek bacak testlerinde servo güç kaynağı olarak laboratuvar güç kaynağı (6 V) kullanılacaktır; Servo 2040'ın lojik beslemesi USB üzerinden Raspberry Pi 5'ten gelir.
+| Bileşen | Adet |
+| --- | --- |
+| Raspberry Pi 5 (kendi adaptörüyle) | 1 |
+| Servo 2040 | 1 |
+| MG996R + F686ZZ | 3 |
+| Laboratuvar güç kaynağı, 6,0 V, ≥3 A | 1 |
 
 ## TBD (Henüz Kesinleşmemiş)
 
 | Bileşen | Durum |
 | --- | --- |
-| Kamera modeli | TBD |
-| IMU modeli | TBD — Servo 2040'ın Qw/ST konnektörüne veya Pi'nin I2C hattına bağlanabilir |
-| Akım ölçümü | Servo 2040'ın kart üstü akım ölçümü öncelikli değerlendirilecek. Faz 2C kontrollü temas için çözünürlüğü ve örnekleme hızı yetmezse harici sensör (INA226 / INA260) eklenecek; deneylerden sonra belirlenecek |
-| Batarya kapasitesi | TBD — yürüyüş akımı ölçüldükten sonra |
-| Ayak temas sensörleri | TBD — isteğe bağlı; Servo 2040'ın 6 analog sensör girişine bağlanabilir |
+| Kamera modeli | TBD (Faz 2A) |
+| IMU modeli | TBD — Servo 2040'ın Qw/ST soketi UART için kullanıldığından IMU Pi'nin I2C hattına bağlanır |
+| Akım ölçümü | Servo 2040'ın kart üstü toplam akım ölçümü kullanılacak. Faz 2C kontrollü temas için yetmezse harici sensör (INA226 / INA260) eklenecek; deneylerden sonra belirlenecek |
+| Batarya kapasitesi | İlk yürüyüş akımı ölçüldükten sonra değerlendirilecek |
 
-Bu parçalar deneyler ve güç ihtiyacı ölçümlerinden sonra belirlenecek ve [decisions.md](decisions.md) dosyasına kaydedilecektir.
+Bu parçalar deneylerden sonra belirlenecek ve [decisions.md](decisions.md) dosyasına kaydedilecektir.

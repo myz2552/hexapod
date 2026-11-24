@@ -1,4 +1,6 @@
-adafruit-blinka
-adafruit-circuitpython-pca9685
-adafruit-circuitpython-motor
+# Raspberry Pi 5 üzerinde, repo kökünden: pip install -r requirements.txt
+# Upstream Pi tarafı istemcisi (controller/ alt modülü) + seri port + kalibrasyon aracı
+./controller[serial,calibrate]
+# controller/calibrate.py klavye girişi için kullanır, ancak paketin extras'ında yok
+sshkeyboard
 PyYAML

@@ -1,103 +1,101 @@
 # Bağlantılar
 
+Elektronik mimari upstream [H-0996](https://github.com/ggldnl/H-0996-Hardware) ile aynıdır: tek bir Pimoroni Servo 2040, 2S LiPo ve iki UBEC. Upstream'in özel PCB'si kullanılmaz; kablolama elle yapılır. Farklar yalnızca UBEC modelleri ve önerilen ana sigortadır.
+
 ## Uyarılar
 
-> **MG996R servolar Raspberry Pi'den veya Servo 2040'ın USB girişinden beslenmemelidir.**
+> **UBEC voltaj anahtarları yanlış konumdaysa kartlar yanar.**
 >
-> Servolar ayrı 6 V yüksek akım hattından, Servo 2040'ın vidalı klemenslerinden beslenir. USB-C girişi en fazla 3 A taşır.
+> - Servo UBEC'i (Hobbywing 10A V2-Car): yalnızca **6,0 V**. 7,4 V ve 8,4 V konumları MG996R'yi bozar.
+> - Pi UBEC'i (Hobbywing 5A V2-Air): yalnızca **5,0 V**. 6,0 V ve 7,4 V konumları Raspberry Pi 5'i ve Servo 2040'ı yakar.
+>
+> Her UBEC'in üzerine voltajını yazın ve çıkışı bağlamadan önce multimetreyle ölçün.
 
 > **Servo 2040'ın arkasındaki "Separate USB and Ext. Power" izi kesilmelidir.**
 >
-> Servo hattı 6 V olduğu için bu iz kesilmezse 6 V kartın lojik devresine ve Raspberry Pi 5'in USB portuna ulaşır. Kestikten sonra multimetreyle USB 5 V ile klemens + arasında süreklilik olmadığını doğrulayın. İz kesildikten sonra kartın lojik beslemesi USB'den (Raspberry Pi 5) gelir.
+> Servo hattı 6 V'tur ve kartın lojik beslemesi Raspberry Pi'nin 5 V'undan gelir. İz kesilmezse 6 V servo hattı Pi'nin 5 V hattına bağlanır. Kestikten sonra multimetreyle kartın 5 V pini ile servo klemensi + arasında süreklilik olmadığını doğrulayın.
 
-> **Servo 2040 klemensleri sürekli 10 A için tasarlanmıştır.** İlk testlerde kart üstü akım ölçümü izlenmelidir (bkz. [Akım sınırı](#akım-sınırı)).
+> **MG996R servolar Raspberry Pi'den beslenmez.** Servo gücü yalnızca Servo 2040'ın vidalı klemensinden gelir. Klemensler sürekli 10 A için tasarlanmıştır; firmware toplam akım 12 A'yı aşınca servoları keser (`safety.current_max`).
 
-## Tek Bacak Prototipi (Faz 1A)
+## Raspberry Pi 5 ↔ Servo 2040 (UART)
+
+Upstream firmware UART1'i kullanır: GP20 (TX) ve GP21 (RX). Bu pinler Servo 2040'ın Qw/ST soketindeki SDA ve SCL'dir. Bağlantı çaprazdır; her tarafın TX'i diğerinin RX'ine gider.
+
+| Raspberry Pi 5 | Servo 2040 | Not |
+| --- | --- | --- |
+| Pin 4 (5V) | 5V pini | Servo 2040'ın lojik beslemesi |
+| Pin 6 (GND) | GND | Ortak GND |
+| Pin 8 (GPIO14, TXD) | GP21 / Qw/ST SCL (RX) | |
+| Pin 10 (GPIO15, RXD) | GP20 / Qw/ST SDA (TX) | |
+
+- Hız: 921600 baud. Pi tarafında port `/dev/ttyAMA0` (bkz. [setup.md](setup.md)).
+- Qw/ST soketinde 5 V yoktur; 5 V ayrı bir jumper kabloyla kartın 5V pinine gider. Pin yerini Pimoroni'nin Servo 2040 pinout'undan doğrulayın.
+- Yanıt gelmiyorsa ilk şüpheli TX/RX'in ters bağlanmasıdır.
+
+## Servo kanal ataması
+
+Atama `config/hexapod.yml` içindeki `hardware.pins` ile aynıdır. Yazılımdaki numaralar 0'dan başlar; kartın üzerindeki baskıda çıkışlar 1'den başlar.
+
+| Bacak | Coxa | Femur | Tibia |
+| --- | --- | --- | --- |
+| front_right | 0 (kart: 1) | 1 (2) | 2 (3) |
+| middle_right | 3 (4) | 4 (5) | 5 (6) |
+| rear_right | 6 (7) | 7 (8) | 8 (9) |
+| rear_left | 9 (10) | 10 (11) | 11 (12) |
+| middle_left | 12 (13) | 13 (14) | 14 (15) |
+| front_left | 15 (16) | 16 (17) | 17 (18) |
+
+Arka bacakların servo kabloları Servo 2040'a yetişmez; servo uzatma kablosu kullanılır.
+
+## Tek bacak testi (laboratuvar güç kaynağıyla)
 
 ```text
-Raspberry Pi 5 ──USB (veri + lojik 5 V)──► Servo 2040 ──servo 1/2/3──► MG996R × 3
-                                              ▲
-                     6 V laboratuvar PSU ──+──┘ (vidalı klemens)
+Raspberry Pi 5 (kendi adaptörü) ──UART + 5V + GND──► Servo 2040 ──çıkış 1/2/3──► front_right Coxa / Femur / Tibia
+                                                        ▲
+                         Laboratuvar güç kaynağı 6,0 V ─┘ (vidalı klemens)
 ```
 
-| Bağlantı | Kaynak / hedef |
-| --- | --- |
-| Raspberry Pi 5 USB-A | Servo 2040 USB-C (seri haberleşme + lojik besleme) |
-| Servo 2040 klemens + / − | 6 V laboratuvar güç kaynağı |
-| Servo 2040 çıkış 1 | Coxa |
-| Servo 2040 çıkış 2 | Femur |
-| Servo 2040 çıkış 3 | Tibia |
+- Güç kaynağının akım sınırını önce 1 A'e ayarlayın; tek bacak için en fazla 3–4 A yeterlidir.
+- Laboratuvar kaynağının eksi ucu klemens −'ye gider; GND ortaklığı UART kablosundaki GND ile sağlanır.
 
-GND referansı USB kablosu üzerinden ortaktır; ayrıca GND kablosu çekmek gerekmez.
-
-## Tam Robot (Faz 1B)
-
-### Güç zinciri
+## Tam robot (bataryayla)
 
 ```text
-2S LiPo ── 25 A sigorta ── anahtar (≥30 A) ── XT60 Y-ayırıcı ─┬─► UBEC #1 (6,0 V) ──► Servo 2040 klemens ──► 18 × MG996R
-                                                              │                        (2200 µF kondansatör)
-                                                              └─► UBEC #2 (5,0 V) ──USB-C güç kablosu──► Raspberry Pi 5
-
-Raspberry Pi 5 ──USB (veri + lojik 5 V)──► Servo 2040
+2S LiPo ── XT60 ── 25 A sigorta ──┬──► UBEC S: Hobbywing 10A V2-Car (6,0 V, kendi anahtarı) ──► Servo 2040 klemensi ──► 18 × MG996R
+                   (önerilir)     │
+                                  └──► UBEC P: Hobbywing 5A V2-Air (5,0 V) ──► Raspberry Pi 5 pin 2 (5V) + pin 6 (GND)
+                                                                                   │
+                                                                                   └── pin 4 (5V) ──► Servo 2040 5V pini (UART kablosu)
+Tüm eksiler ortaktır.
 ```
 
-- Servolar ve Raspberry Pi 5 ayrı UBEC'lerden beslenir; servo akım darbeleri Pi'yi yeniden başlatmaz.
-- İki UBEC aynı modeldir; çıkış voltajı jumper/ayar ile seçilir. Hangisinin 6 V, hangisinin 5 V olduğu üzerlerine yazılmalıdır.
-- Tüm eksiler (batarya, UBEC'ler, Servo 2040, Pi) dağıtım noktasında ve USB üzerinden ortaktır.
+| Hat | Parça | Kablo |
+| --- | --- | --- |
+| Batarya → sigorta → iki UBEC girişi | XT60 erkek, 25 A bıçak sigorta + yuvası | 14 AWG |
+| UBEC S çıkışı → Servo 2040 klemensi | Hobbywing 10A V2-Car, 6,0 V | 14–16 AWG, kısa |
+| UBEC P çıkışı → Pi pin 2 ve 6 | Hobbywing 5A V2-Air, 5,0 V | 18–20 AWG, kısa |
+| Pi → Servo 2040 (UART) | Dişi-dişi jumper + Qw/ST jumper kablosu | 22–26 AWG |
 
-### Kanal ataması
+- İki UBEC'in girişleri sigortadan sonra paralel bağlanır: + uçlar birlikte, − uçlar birlikte.
+- **Sigorta upstream'de yoktur.** Upstream, Servo 2040'ın yazılımla akım kesmesine ve UBEC'lerin çıkış korumasına güvenir. Bu korumalar batarya ile UBEC girişleri arasındaki kabloyu korumaz; bu yüzden 25 A sigorta önerilir.
+- Servo hattının açma/kapama anahtarı UBEC S'nin kendi anahtarıdır. Pi hattında anahtar yoktur; tüm sistemi kapatmak için önce Pi'yi kapatın (`sudo shutdown now`), sonra XT60'ı çıkarın.
+- Raspberry Pi 5, GPIO 5 V pinlerinden beslendiğinde güç kaynağının 5 A verebildiğini bilemez. `/boot/firmware/config.txt` içine `usb_max_current_enable=1` eklenir. 5,0 V çıkışta kablo uzun veya inceyse Pi düşük voltaj uyarısı verebilir; kabloyu kısa tutun.
+- GPIO 5 V pinlerinde ters kutup koruması yoktur. Bağlamadan önce + ve −'yi kontrol edin.
 
-Sağ bacaklar 1–9, sol bacaklar 10–18; her bacakta sıra Coxa → Femur → Tibia. Bacak adları [config/robot_geometry.yaml](../config/robot_geometry.yaml) ile aynıdır.
+## Gövde yerleşimi
 
-| Bacak | Coxa | Femur | Tibia | Ayak sensörü (isteğe bağlı) |
-| --- | --- | --- | --- | --- |
-| front_right | 1 | 2 | 3 | SENSOR_1 |
-| middle_right | 4 | 5 | 6 | SENSOR_2 |
-| rear_right | 7 | 8 | 9 | SENSOR_3 |
-| rear_left | 10 | 11 | 12 | SENSOR_4 |
-| middle_left | 13 | 14 | 15 | SENSOR_5 |
-| front_left | 16 | 17 | 18 | SENSOR_6 |
+Upstream yerleşimi korunur:
 
-Numaralar Servo 2040 üzerindeki servo çıkış numaralarıdır (MicroPython'da `servo2040.SERVO_1` … `servo2040.SERVO_18`). CircuitPython yalnızca 16 servoyu desteklediği için kullanılmamalıdır.
+- Batarya gövdenin altında, `battery_mount` üzerinde.
+- UBEC'ler `battery_mount`'ın iki yuvasında. Yuvalar upstream'in UBEC modeline göredir; Hobbywing modelleri için yuvalar ekip tarafından uyarlanacaktır (bkz. [cad-reference.md](cad-reference.md)).
+- Raspberry Pi 5 ve Servo 2040 gövdenin üstünde, `electronics_mount` üzerinde. Servo 2040 M2 vida ve M2 heat-set insert ile takılır.
+- Sigorta bataryaya olabildiğince yakın, UBEC S'nin anahtarı kolay erişilebilir yerde.
 
-### Kablo kesitleri
-
-| Hat | Kesit |
-| --- | --- |
-| Batarya → sigorta → anahtar → dağıtım | 14 AWG (2,0 mm²) |
-| UBEC #1 → Servo 2040 klemensi | 14–16 AWG, kısa |
-| UBEC #2 → USB-C güç kablosu | 18 AWG, kısa (voltaj düşümü) |
-| Servo kabloları / uzatmalar | 22 AWG |
-
-### Raspberry Pi 5'in UBEC ile beslenmesi
-
-UBEC, USB-C PD ile 5 A verebildiğini bildiremez. Pi 5 açılır, ancak USB portlarının toplam akımını 600 mA ile sınırlar ve uyarı gösterebilir. Servo 2040 için bu yeterlidir. Gerekirse `/boot/firmware/config.txt` dosyasına `usb_max_current_enable=1` eklenir.
-
-Pi'yi GPIO 5 V pinlerinden beslemek de mümkündür, ancak ters bağlantı kartı bozar; USB-C güç kablosu tercih edilmiştir.
-
-### Akım sınırı
-
-MG996R sınıfı servolar zorlandığında servo başına 2,5–3 A çekebilir. 18 servonun hepsi aynı anda zorlanmadıkça toplam akım bunun çok altında kalır, ancak gerçek değer ölçülmeden bilinmez. Bu nedenle:
-
-- İlk ayağa kalkma ve yürüyüş denemelerinde Servo 2040'ın akım ölçümü kaydedilmelidir.
-- Yazılımda, akım 2 saniyeden uzun süre 9 A'yı aşarsa tüm servolar bırakılmalıdır (eşik deneylerden sonra güncellenecek).
-- Akım sürekli olarak 10 A'yı aşarsa servo gücü ikiye bölünür: servoların yarısının + kablosu ikinci bir 6 V UBEC'ten beslenir, sinyal ve GND Servo 2040'da kalır.
-
-### Gövde yerleşimi
-
-- Raspberry Pi 5 alt katta, Servo 2040 üstünde M2.5 aralık parçalarıyla.
-- Batarya gövdenin altında, cırt bantla.
-- UBEC'ler gövdenin iki yanında, havalanabilecekleri yerde.
-- Anahtar ve sigorta kolay erişilebilir yerde.
-
-Base parçasının orta boşluğu yaklaşık 65 × 120 mm'dir (STL'den ölçülmüştür); Pi 5 (85 × 56 mm) uzun kenarı ön-arka doğrultusunda sığar. Base içi boş çerçeve olduğundan elektronik için ince bir montaj plakası gerekir (bkz. [cad-reference.md](cad-reference.md)).
-
-### İlk açılış sırası
+## İlk açılış sırası
 
 1. Servo 2040'ın "Separate USB and Ext. Power" izini kesin ve sürekliliği kontrol edin.
-2. UBEC #1'i 6,0 V, UBEC #2'yi 5,0 V'a ayarlayıp yüksüz ölçün (5,0–5,2 V uygun).
-3. 2200 µF kondansatörü klemenslere kutbuna dikkat ederek bağlayın.
-4. Servolar takılı değilken Servo 2040'ı USB ile Pi'ye bağlayın, MicroPython yükleyin, akım ve voltaj okumasını test edin.
-5. Bir bacağın servolarını takın; kalibrasyon akışıyla devam edin. Mevcut bring-up ve kalibrasyon araçları ([software/servo_test](../software/servo_test/README.md)) PCA9685 için yazılmıştır ve Servo 2040'a henüz uyarlanmamıştır (bkz. [roadmap.md](roadmap.md)).
-6. Tüm bacaklar takıldıktan sonra ilk açılışta robotu bacakları havada kalacak şekilde destek üzerine koyun ve akımı izleyin.
+2. UBEC'lerin anahtarlarını ayarlayın: UBEC S 6,0 V, UBEC P 5,0 V. Bataryayı takıp çıkışları yüksüzken ölçün.
+3. Firmware'i Servo 2040'a yükleyin ve Pi'nin UART ayarlarını yapın ([setup.md](setup.md)).
+4. Servolar takılı değilken Pi'yi ve Servo 2040'ı bağlayın: `python -m software.bringup telemetry`. Durum `OFF`, voltaj ve akım okunuyor olmalı.
+5. Servoları kalibre edin (`controller/calibrate.py`), sonra bacaklara monte edin.
+6. Robotu bacakları havada kalacak şekilde bir desteğe koyun ve ilk ayağa kalkmayı orada deneyin: `python -m software.bringup stand`. En yüksek akımı not edin.

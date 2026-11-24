@@ -1,67 +1,71 @@
 # Sistem Mimarisi
 
+Mekanik, elektronik ve hareket kontrolü upstream [H-0996](https://github.com/ggldnl/H-0996) projesiyle aynıdır. Projenin kendi katkısı Raspberry Pi tarafındaki üst katmandır: kamera, YOLO, itilebilirlik kararı, deney kaydı ve yürüyüş karşılaştırması.
+
 ## Genel Sistem
 
 ```text
-                   Kamera
-                     │
-                     ▼
-             ┌────────────────┐
-             │ Raspberry Pi 5 │
-             │----------------│
-             │ YOLO           │
-             │ Decision       │
-             │ IK             │
-             │ Gait           │
-             │ Sensor Reading │
-             └───────┬────────┘
-                     │ USB (seri + lojik 5 V)
-                     ▼
-             ┌────────────────┐
-             │  Servo 2040    │──Qw/ST──► IMU (TBD)
-             │----------------│
-             │ PWM üretimi    │◄─ ayak sensörleri (isteğe bağlı)
-             │ Akım / voltaj  │
-             └───────┬────────┘
-                     │ 18 kanal
-                     ▼
-                18 × MG996R
+                     Kamera (Faz 2)
+                        │
+                        ▼
+              ┌──────────────────────┐
+              │   Raspberry Pi 5     │
+              │----------------------│
+              │ YOLO + karar (Faz 2) │
+              │ software.bringup     │
+              │ controller (hexapod) │──── config/hexapod.yml
+              └──────────┬───────────┘
+                         │ UART 921600 baud (GPIO14/15 ↔ GP21/20) + 5 V + GND
+                         ▼
+              ┌──────────────────────┐
+              │   Servo 2040         │
+              │   (H-0996-Firmware)  │
+              │----------------------│
+              │ Durum makinesi       │
+              │ Yürüyüş üreteci      │
+              │ Inverse kinematics   │
+              │ PWM, akım/voltaj     │
+              │ Watchdog, FAULT      │
+              └──────────┬───────────┘
+                         │ 18 kanal
+                         ▼
+                    18 × MG996R
 ```
 
-Raspberry Pi 5 tek ana bilgisayardır; YOLO, karar, inverse kinematics (IK), gait ve sensör okuma yazılımları üzerinde çalışır. Servo PWM sinyalleri, Pi'ye USB ile bağlı Servo 2040 kartının RP2040 işlemcisinde üretilir; Pi yalnızca servo komutlarını gönderir. Servo 2040 ayrıca servo güç hattının akımını ve voltajını ölçer. ESP32 kullanılmaz.
+| Katman | Nerede | Kaynak |
+| --- | --- | --- |
+| Durum makinesi (OFF → kalkış → IDLE ↔ WALK → oturma, FAULT) | Servo 2040 | `firmware/src/core/robot.hpp` |
+| Yürüyüş üreteci: tripod, wave, ripple | Servo 2040 | `firmware/src/core/gait.hpp` |
+| Bacak FK/IK | Servo 2040 | `firmware/src/core/kinematics.hpp` |
+| PWM, servo gücü, akım/voltaj ölçümü | Servo 2040 | `firmware/src/communication/servo2040_hal.hpp` |
+| Seri protokol ve istemci | Pi | `controller/hexapod/` |
+| Robot yapılandırması ve kalibrasyon | Pi → karta gönderilir | `config/hexapod.yml` |
+| Devreye alma, ayakta durma, yürüyüş kaydı | Pi | `software/bringup.py` |
+| Kamera, YOLO, karar | Pi | `software/vision`, `software/decision` (Faz 2) |
 
-Kamera modeli ve IMU modeli henüz TBD'dir. Servo 2040'ın akım ölçümünün Faz 2C için yeterliliği deneyle belirlenecektir; yetmezse harici sensör (INA226 / INA260) eklenir. Bkz. [donanım](hardware.md).
+Pi bağlanırken `config/hexapod.yml` içeriğini karta gönderir (provisioning). Ardından yalnızca yüksek seviyeli komutlar yollar: ayağa kalk / otur, yürüyüş tipi, hız (vx, vy, dönüş), gövde pozu ve heartbeat. Kart telemetri olarak durum, odometri, servo hattı voltajı ve akımını döndürür.
 
-## Faz 1A – Tek Bacak
+## Güç
 
 ```text
-Raspberry Pi 5
-  ↓ USB
-Servo 2040
-  ↓
-3 × MG996R (çıkış 1 Coxa, 2 Femur, 3 Tibia)
-  ↓
-Servo calibration
-  ↓
-Inverse kinematics
-  ↓
-XYZ foot control
+2S LiPo ── 25 A sigorta ─┬─► UBEC S (Hobbywing 10A V2-Car, 6,0 V) ──► Servo 2040 klemensi ──► 18 × MG996R
+                         └─► UBEC P (Hobbywing 5A V2-Air, 5,0 V) ──► Raspberry Pi 5 ──► Servo 2040 lojik 5 V
 ```
 
-Tek bacak yalnızca Faz 1 mekanik ve IK doğrulaması için kullanılır. Bağlantılar için bkz. [wiring.md](wiring.md).
+Ayrıntılar ve uyarılar: [wiring.md](wiring.md).
 
-## Faz 1B – Tam Hexapod
+## Faz 1 – Platform ve Yürüyüş
 
 ```text
-18 × MG996R
+Servo 2040 + firmware devreye alma
   ↓
-1 × Servo 2040
+18 servo kalibrasyonu (controller/calibrate.py → hardware.pulses)
   ↓
-6-leg IK
+Montaj, yön ve trim düzeltmesi (hardware.direction / hardware.trim)
   ↓
-Tripod gait
+Ayakta durma
   ↓
-Walk / Turn / Stop
+Tripod ve wave yürüyüşü, karşılaştırma
 ```
 
 ## Faz 2 – Algı ve Engel Kararı
@@ -81,12 +85,12 @@ PUSH        AVOID         BELİRSİZ
 │             │              │
 İt          Dolaş      Kontrollü temas
                            ↓
-                      Akım + IMU
+                Servo 2040 akımı + IMU + odometri
                            ↓
                       PUSH / AVOID
 ```
 
-Belirsiz durumda robot ön tampon ile düşük hızlı kontrollü gövde teması yapar. Servo güç hattı akımı, IMU ve robotun ilerleme bilgisi birlikte değerlendirilerek PUSH veya AVOID kararı verilir. Güvenli hareket mümkün değilse robot STOP/BACK davranışı uygular.
+Karar katmanı hareketi controller istemcisi üzerinden uygular: PUSH yavaş ileri hız, AVOID dönüş ve yanal hız, STOP/BACK sıfır veya geri hız. Belirsiz durumda robot ön tamponla düşük hızlı gövde teması yapar; Servo 2040'ın telemetrideki akım ölçümü, IMU ve odometri birlikte değerlendirilir. Güvenli hareket mümkün değilse robot STOP/BACK uygular.
 
 Önceki "tek bacakla nesneye itme testi" mimarisi kaldırılmıştır (bkz. [decisions.md](decisions.md)).
 
@@ -94,23 +98,15 @@ Belirsiz durumda robot ön tampon ile düşük hızlı kontrollü gövde teması
 
 ### Mekanik Platform
 
-Mekanik başlangıç noktası [ggldnl/Hexapod-Hardware](https://github.com/ggldnl/Hexapod-Hardware) tasarımıdır. MG996R montaj geometrisi, F686ZZ rulmanlı yataklama ve M3 vida / M3 heat-set insert yaklaşımı korunur. Raspberry Pi 5 + Servo 2040 montaj plakası, kamera yuvası, güç sistemi (batarya, iki UBEC) yerleşimi ve ön itme tamponu projeye göre yeniden tasarlanır. Bkz. [cad-reference.md](cad-reference.md).
-
-### Güç ve Servo Elektroniği
-
-Güç 2S LiPo'dan gelir ve aynı modelden iki UBEC ile ikiye ayrılır: 6,0 V hat Servo 2040 üzerinden 18 servoyu, 5,0 V hat Raspberry Pi 5'i besler. Servo akım darbeleri Pi'ye ulaşmaz. Servo 2040 servo güç hattının akımını ve voltajını ölçer; bu ölçüm hem aşırı akım korumasında hem de Faz 2C kontrollü temasta kullanılır. Ayrıntılar: [wiring.md](wiring.md).
-
-### Hareket Kontrolü
-
-Servo kalibrasyonu (yön, nötr açı, min/max), Coxa/Femur/Tibia IK, duruş ve tripod gait'i yönetir. Faz 2'de PUSH (gövdeyle itme), AVOID (dolaşma), kontrollü gövde teması ve STOP/BACK hareketleri eklenir.
+Upstream [Hexapod-Hardware](https://github.com/ggldnl/H-0996-Hardware) parçaları PCB'siz kurulumla kullanılır: `electronics_mount` üzerinde Pi ve Servo 2040, `battery_mount` üzerinde batarya ve iki UBEC. Projeye özel değişiklikler: Hobbywing UBEC'ler için `battery_mount` yuvaları, kamera yuvası ve ön itme tamponu. Bkz. [cad-reference.md](cad-reference.md).
 
 ### Kamera ve YOLO
 
-Görüntü alır; nesne sınıfı, görüntüde konum ve algılama güveni üretir. YOLO algılama güveni doğrudan itilebilirlik olarak kullanılmaz; görsel itilebilirlik tahmini ayrıca oluşturulur. Veri seti tek bir `obstacle` sınıfı yerine ayrı nesne sınıfları içerir. YOLO modelinin son sürümü TBD'dir.
+Görüntü alır; nesne sınıfı, görüntüdeki konum ve algılama güveni üretir. YOLO algılama güveni doğrudan itilebilirlik olarak kullanılmaz; görsel itilebilirlik tahmini ayrıca oluşturulur. Veri seti tek bir `obstacle` sınıfı yerine ayrı nesne sınıfları içerir. YOLO modelinin son sürümü TBD'dir.
 
 ### Fiziksel Doğrulama
 
-Yalnızca görsel karar belirsiz olduğunda çalışır. Ön tamponla düşük hızlı temas sırasında servo güç hattı akımı, IMU ve ilerleme verilerini kaydeder ve değerlendirir. Eşikler deneylerden sonra belirlenecektir.
+Yalnızca görsel karar belirsiz olduğunda çalışır. Ön tamponla düşük hızlı temas sırasında servo hattı akımı, IMU ve ilerleme verilerini kaydeder ve değerlendirir. Servo 2040'ın akım ölçümü toplam servo akımıdır; çözünürlüğünün yeterliliği ve eşikler deneylerden sonra belirlenecektir.
 
 ### Karar
 
@@ -118,12 +114,13 @@ Görsel itilebilirlik tahmini yeterince güvenliyse doğrudan PUSH veya AVOID se
 
 ### Deney Kaydı
 
-Servo açıları, hareket komutları, görsel tahmin, fiziksel doğrulama verileri, karar ve gerçek hareket sonucu ortak deneme kimliğiyle `experiments/` altında kaydedilir.
+Telemetri (`software.bringup --log`), hareket komutları, görsel tahmin, fiziksel doğrulama verileri, karar ve gerçek hareket sonucu ortak deneme kimliğiyle `experiments/` altında kaydedilir.
 
 ## Tasarım İlkeleri
 
 - Faz 2'den önce ayakta durma ve yürüyüş doğrulanmalıdır.
-- Servo yönleri, nötr açıları ve min/max limitleri fiziksel kalibrasyonla belirlenmeli ve belgelenmelidir; değerler uydurulmamalıdır.
-- MG996R servolar Raspberry Pi'nin 5 V pininden beslenmemelidir.
+- Upstream firmware ve controller değiştirilmeden kullanılır; robota özel her şey `config/hexapod.yml` içindedir. Upstream kodunda değişiklik gerekirse önce fork yapılır ve [decisions.md](decisions.md) dosyasına kaydedilir.
+- Servo kalibrasyonu, yön ve trim değerleri fiziksel ölçümle belirlenmeli; değerler uydurulmamalıdır.
+- MG996R servolar Raspberry Pi'den beslenmez.
 - Görsel tahmin, fiziksel doğrulama ve hareket başarısı ayrı kaydedilmelidir.
 - Gövdeyle itme başarısızsa robot durmalı; uygun alan varsa AVOID değerlendirilmelidir.

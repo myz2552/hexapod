@@ -9,6 +9,6 @@ Upstream STL/STEP dosyaları bu repoya kopyalanmaz. Lisans/izin durumu teyit edi
 
 ```text
 cad/
-├── modified/   Projeye göre yeniden tasarlanan parçalar (Pi 5 + Servo 2040 montaj plakası, kamera yuvası, güç yerleşimi, ön tampon)
+├── modified/   Projeye göre yeniden tasarlanan parçalar (Hobbywing UBEC'ler için battery_mount, kamera yuvası, ön tampon)
 └── README.md
 ```

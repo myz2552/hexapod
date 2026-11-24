@@ -8,20 +8,17 @@
 
 Kapsam:
 
-- Faz 1A: Raspberry Pi 5 + Servo 2040 + 3 × MG996R ile tek bacak prototipi
-- Coxa, Femur ve Tibia servolarının yön, nötr açı ve güvenli min/max açı kalibrasyonu
-- Tek bacak inverse kinematics (IK) ve XYZ ayak pozisyonlama
-- Faz 1B: 6 bacak, 18 × MG996R ve 1 × Servo 2040 ile tam mekanik platform
-- Raspberry Pi 5, Servo 2040, kamera, güç sistemi (2S LiPo + 2 × UBEC) ve ön tampon yerleşimi
-- Faz 1C: 6 bacak IK, tripod gait, ileri yürüme, dönme ve durma
+- Elektronik ve hareket kontrolü upstream H-0996 ile aynıdır: Servo 2040 üzerinde upstream firmware (durum makinesi, yürüyüş, IK), Raspberry Pi 5 üzerinde upstream controller istemcisi (bkz. [architecture.md](architecture.md))
+- Faz 1A: Servo 2040 devreye alma, Pi ↔ kart UART bağlantısı, 18 servonun darbe kalibrasyonu, tek bacak testi
+- Faz 1B: 6 bacak, 18 × MG996R, güç sistemi (2S LiPo, sigorta, 2 × UBEC), yön/trim ayarı ve ayakta durma
+- Faz 1C: tripod ve wave yürüyüşü, ileri yürüme, dönme, durma ve iki yürüyüşün karşılaştırılması
 
 Başarı ölçütleri:
 
-- Tek bacak seçilen XYZ koordinatlarına güvenli ve tekrarlanabilir şekilde ulaşabilmelidir.
-- 18 servonun kalibrasyon değerleri belgelenmiş olmalıdır.
+- 18 servonun kalibrasyon değerleri `config/hexapod.yml` içinde belgelenmiş olmalıdır.
 - Robot temel duruşunu koruyabilmelidir.
 - Yürüme, dönüş ve durma hareketleri tekrarlanabilir olmalıdır.
-- Hız, yanal sapma, güç durumu ve mekanik sorunlar kaydedilmelidir.
+- Tripod ve wave için hız, yanal sapma, akım/enerji ve mekanik sorunlar kaydedilmelidir.
 
 Kamera, YOLO ve engel kararı Faz 2'de ele alınacaktır.
 
@@ -63,7 +60,9 @@ Başarı ölçütleri:
 - Mekanik esneme ve servo kalibrasyon hataları
 - 18 MG996R servonun anlık akımı nedeniyle güç hattında gerilim düşümü ve aşırı yük
 - Servo 2040 klemenslerinin 10 A sürekli akım sınırının yürüyüşte aşılması
-- Ortak GND hatalarından kaynaklanan PWM/USB sorunları
+- UBEC voltaj anahtarının yanlış konumda bırakılması (Pi veya servolar zarar görür)
+- Ortak GND veya TX/RX hatalarından kaynaklanan UART sorunları
+- Upstream firmware'in bu robotta donanımda doğrulanmamış olması; yürüyüş davranışını değiştirmek C++ firmware'de fork gerektirir
 - Gövdeyle itme sırasında duruşun veya yönün bozulması
 - Yürüyüş servolarının akımının kontrollü temas ölçümünü maskelemesi
 - Algı hataları, ölçüm gürültüsü ve dolaşma alanının yetersizliği

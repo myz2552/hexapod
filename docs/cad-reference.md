@@ -12,10 +12,12 @@ Korunacak yaklaşımlar:
 
 Projeye göre yeniden tasarlanacak parçalar:
 
-- Raspberry Pi 5 + Servo 2040 montaj plakası (base orta boşluğu yaklaşık 65 × 120 mm)
+- `battery_mount` UBEC yuvaları: upstream'in iki kanallı 8 A UBEC'ine göre tasarlanmıştır. Kullandığımız Hobbywing 10A V2-Car (45 × 20 × 16,2 mm) ve 5A V2-Air (50 × 17 × 10 mm) için yuvalar uyarlanacak ya da UBEC'ler cırt bant/kelepçeyle sabitlenecek
 - Kamera yuvası (kamera modeli TBD)
-- Güç sistemi yerleşimi (2S LiPo, 2 × UBEC, sigorta, anahtar; bkz. wiring.md)
 - Ön itme tamponu (Faz 2 PUSH ve kontrollü gövde teması için)
+- Sigorta yuvası (isteğe bağlı)
+
+Upstream'den değiştirilmeden kullanılanlar: tüm bacak parçaları, base, stiffener'lar ve PCB'siz kurulum için `electronics_mount` (Raspberry Pi 5 + Servo 2040).
 
 ## Tek Bacak İçin Referans Parçalar
 
